@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="HandheldFriendly" content="true">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=no">
+
+
+<!--<script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script>-->
+<style type="text/css">
+html, body {
+padding: 0; margin: 0; width: 100vw; height: 100vh; font-family: Arial;    background-color: #FFE4C4;}
+*, *::before, *::after {
+  box-sizing: border-box;}
+body{
+transition: background-color 1s ease; transition: opacity 1s ease;}
+#progress-status {
+float: left; width: 0%;  height: 40px;  background-color: red; transition: width 2s ease;}
+#progress-box {
+width: 99%; height: auto; position: fixed;     top: 8%;    opacity: 1;  }
+#progress-box>#progress-bar {
+border: 10px solid #000; border-radius: 10px;background-color: #fff; color: #000; height: 60px; width: 80%; text-align: center; }
+#form-box {
+display:none; margin: auto;position: fixed;     top: 20%;    opacity: 1; width: 99%;  height: auto;  border: none;}
+#form-box>#form {
+border: 10px solid #000; border-radius: 10px;background-color: #fff; color: #000; height: auto; width: 80%; text-align: center; }
+#question-box {
+display:none; margin: auto;position: fixed;     top: 20%;    opacity: 1; width: 99%;  height: auto;  border: none;}
+#question-box>div {
+border: 10px solid #000; border-radius: 10px;background-color: #fff; color: #000; height: auto; width: 80%; text-align: center; }
+#spm {
+text-align: left; }
+
+#question-text{
+opacity:0; transition: opacity 1s ease;}
+#inter {
+border:4px dotted blue;    border-radius: 30px;    background-color: red;color: #fff;    padding: 20px;text-align:center;display:none;}
+
+
+
+.button {
+
+border: 1px solid #000; border-radius: 10px; background-color: green; color: #fff; font-size:10px; height:35px;width: 145px; }
+
+.button:hover {
+background-color: green;}
+#submit {
+border: 1px solid #000; border-radius: 10px; background-color: green; color: #fff; font-size:10px; height:35px;width: 40%; }
+
+
+
+.controls {
+border: 1px solid #000; border-radius: 10px; background-color: green; color: #fff; font-size:10px; height:35px;width: 290px; }
+
+
+
+.highlight{
+
+background-color: indigo; transition: background-color 1s ease;}
+.correct{
+
+background-color: green; transition: background-color 1s ease;}
+.wrong{
+
+background-color: orange; transition: background-color 1s ease;}
+.hide {
+  display: none;}
+#form-box, #rap-answers{
+display:block;}
+#question-box, #next-button{
+display:none;}
+#st, b {
+color: White;}
+labal {
+color: black;}
+
+#alt {
+    height: 40px;     position: fixed;     bottom:5%;    width:100%;     opacity: 1;color: #fff;	font-size: 10px;text-align: center; background-color: #000;}
+select, input {
+font-size: auto;color: #fff;background-color: #550000;width: 80%;    padding: 12px;    border: 1px solid #fff;    border-radius: 8px;    }
+</style>
+<title>Quiz</title>
+</head>
+
+<body>
+
+
+
+<section id="main">
+<br><br>
+
+
+
+<div class="container2 box" id="inter">
+<div id="st" aria-live="assertive">You los internet connection!</div>
+<b>Pleas Try:</b>
+<ul>
+<li>Turning on mobile data or WiFi.</li>
+
+<li>Checking the signal in your area.</li>
+
+<li>Turning off airplane mode.</li>
+<li>Turning off power saving mode.</li>
+</ul>
+
+
+
+ </div>
+<div id="page">
+<div class="box" id="form-box" align = "center">
+<form id="form">
+<labal for="textbox">Amount of questions:</labal>
+<br>
+<input type="tel" name="amount" value="5" id="textbox" placeholder="How many questions you want to answer?"></input>
+<br>
+<label for="language-box">Quiz language:</label>
+<br>
+
+
+
+
+                <select id="language-box" name="language">  <option value="AS">Assamese</option>  <option value="BN">Bengali</option>  <option value="EN" selected>English</option>  <option value="GU">Gujarati</option>  <option value="HI" >Hindi</option>   <option value="kn">Kannada</option>   <option value="MR">Marathi</option>   <option value="ML">Malayalam</option>  <option value="NE">Nepali</option>  <option value="PA">Punjabi</option>  <option value="TA">Tamil</option>  <option value="TE">Telugu</option>  <option value="UR">Urdu</option>                </select>
+<br>
+<labal for="categorybox">Select category:</labal>
+<br>
+<select name="category" id="categorybox"><option value="-1">Category:</option></select>
+<br>
+
+<labal for="difficultybox">Select difficulty:</labal>
+<br>
+<select name="difficulty" id="difficultybox"><option value="-1">Difficulty:</option></select>
+<br><br>
+<input type="submit" id="submit" value="Start" class="controls button"></input>
+<br>
+</form></div>
+<br>
+<div id="progress-box" class="box" aria-hidden="false" align = "center">
+<div id="progress-bar">
+<div id="progress-status"></div>
+</div></div>
+<br>
+<div class="box" id="question-box" aria-live="polite" align = "center"><div>
+<div id="spm" align = "left">
+<br>
+
+<span id="score-box"></span>
+<br>
+<span id="question-category"></span>
+<br>
+<span id="question-difficulty"></span>
+<br>
+<span id="question-type"></span>
+<br>
+<span id="question-number"></span>
+</div>
+<br>
+<p id="question-text"></p>
+<br>
+
+
+<div id="rap-answers">
+<labal>Options:</labal>
+<div id="answers-grid" align = "center">
+<button class="button answer-button"></button>
+<button class="button answer-button"></button>
+<br>
+<button class="button answer-button"></button>
+<button class="button answer-button"></button>
+</div><br></div>
+<div align = "center">
+<button class="controls button" id="next-button">Next</button>
+<br>
+</div>
+</div></div></div>
+<div class="box" id="alt" aria-live="assertive" style ="display:none" align = "center">
+<p id="cpy"></p>
+</div>
+</section>
+<script>
+'use strict';
+const body = document.getElementById("main");
+const form = document.getElementById("form");
+const amount_element = document.getElementById("textbox");
+const language_element = document.getElementById("language-box");
+const categorys_element = document.getElementById("categorybox");
+const difficulty_element = document.getElementById("difficultybox");
+const progressbar_div = document.getElementById("progress-status");
+const question_div = document.getElementById("question-box");
+const score_box = document.getElementById("score-box");
+const question_difficulty_span = document.getElementById("question-difficulty");
+const question_category_span = document.getElementById("question-category");
+const question_type_span = document.getElementById("question-category");
+const question_number_span = document.getElementById("question-number");
+const question_text_pera = document.getElementById("question-text");
+const answer_buttons = document.getElementsByClassName("answer-button");
+const next_button = document.getElementById("next-button");
+const msg_box = document.getElementById("cpy");
+let selected_answer_button = answer_buttons[0];
+const start_sound = new Audio(creatShortURL("https://www.dropbox.com/s/ugfgyi5a0e83lik/quiz-start.mp3?dl=0"));
+const next_question_sound = new Audio(creatShortURL("https://www.dropbox.com/s/mb17dz6xm6bse6x/quiz-next-question.mp3?dl=0"));
+const select_answer_sound = new Audio(creatShortURL("https://www.dropbox.com/s/376y2t4o4nhf15d/quiz-select-answer.mp3?dl=0"));
+const correct_answer_sound = new Audio(creatShortURL("https://www.dropbox.com/s/mbuu0n8gswwv2yb/quiz-correct-answer.mp3?dl=0"));
+const wrong_answer_sound = new Audio(creatShortURL("https://www.dropbox.com/s/pe4zhxczwomodzu/quiz-wrong-answer.mp3?dl=0"));
+const end_sound = new Audio(creatShortURL("https://www.dropbox.com/s/e524wcbwfc4g266/quiz-over.mp3?dl=0"));
+const categorys = [{"id":"","name":"All"},{"id":9,"name":"General Knowledge"},{"id":10,"name":"Entertainment: Books"},{"id":11,"name":"Entertainment: Film"},{"id":12,"name":"Entertainment: Music"},{"id":13,"name":"Entertainment: Musicals & Theatres"},{"id":14,"name":"Entertainment: Television"},{"id":15,"name":"Entertainment: Video Games"},{"id":16,"name":"Entertainment: Board Games"},{"id":17,"name":"Science & Nature"},{"id":18,"name":"Science: Computers"},{"id":19,"name":"Science: Mathematics"},{"id":20,"name":"Mythology"},{"id":21,"name":"Sports"},{"id":22,"name":"Geography"},{"id":23,"name":"History"},{"id":24,"name":"Politics"},{"id":25,"name":"Art"},{"id":26,"name":"Celebrities"},{"id":27,"name":"Animals"},{"id":28,"name":"Vehicles"},{"id":29,"name":"Entertainment: Comics"},{"id":30,"name":"Science: Gadgets"},{"id":31,"name":"Entertainment: Japanese Anime & Manga"},{"id":32,"name":"Entertainment: Cartoon & Animations"}];
+
+const difficultys = [{"id":"","name":"All"},{"id":"easy","name":"Easy"},{"id":"medium","name":"Medium"},{"id":"hard","name":"Hard"}];
+
+const scores_map= {    easy: 1,    medium: 3,    hard: 5}
+
+const api_URL = "https://opentdb.com/api.php?";
+let questions;
+let selectedAnswer;
+let currentQuestionIndex=0;
+let maximum_questions = 0;
+let score = 0;
+let progressTarget = 10;
+        let translatFrom = "EN";
+form.addEventListener("submit", handalForm);
+for(let e=0;e<answer_buttons.length;e++){
+answer_buttons[e].addEventListener("click", selectAnswer);
+}
+next_button.addEventListener("click", nextQuestion);
+//question_div.addEventListener("click", speakText);
+//start_sound.onend = function() {next_question_sound.play()};
+function handalForm(event) {
+event.preventDefault();
+
+let questionAmount = parseInt(amount_element.value);
+let questionCategory = categorys_element.value;
+let questionDifficulty = difficulty_element.value;
+
+
+if( isNaN(questionAmount)===true){
+alt("Please, enter a valid question amount.");
+return;
+}
+
+
+if((questionAmount<5)||(questionAmount>50)){
+alt("Question amount must be between 5 and 50.");
+return;
+}
+if(questionCategory==="-1"){
+alt("Please, choose a category.");
+return;
+}
+if(questionDifficulty==="-1"){
+alt("Please, choose a difficulty.");
+return;
+}
+maximum_questions = questionAmount;
+getQuestions(questionAmount, questionCategory, questionDifficulty);
+
+}
+function getQuestions(amount, category, difficulty) {
+start_sound.currentTime=0;
+start_sound.play();
+let url = api_URL+"amount="+amount;
+if(category!==""){
+url+="&category="+category;
+}
+if(difficulty!==""){
+url+="&difficulty="+difficulty;
+}
+url+="&type=multiple";
+
+sh("form-box", "none");
+sh("rap-answers", "block");
+  let xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+processQuestions(this.response);
+}
+};
+  xhttp.open("GET", url, true);
+  xhttp.send();
+
+}
+
+function processQuestions(response) {
+let questionsResponse = JSON.parse(response);
+
+if(questionsResponse.response_code!=0){
+sh("form-box", "block");
+alt("Please, try again later.");
+return;
+}
+questions = questionsResponse.results;
+
+questions.forEach(function(question) {
+question.incorrect_answers.push(question.correct_answer);
+  for (let i = question.incorrect_answers.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1)); // random index from 0 to i
+
+
+    [question.incorrect_answers[i], question.incorrect_answers[j]] = [question.incorrect_answers[j], question.incorrect_answers[i]];
+  }
+
+});
+currentQuestionIndex =0 ;
+progressTarget = maximum_questions;
+score = 0;
+score_box.innerText="Your score: "+score;
+next_button.innerText="Next";
+sh("question-box", "block");
+updateProgressbar(currentQuestionIndex);
+printQuestion();
+}
+function printQuestion() {
+body.className="";
+selected_answer_button.classList.remove("highlight");
+sh("next-button", "none");
+let translatTo = language_element.value;
+let question = questions[currentQuestionIndex];
+let questionText;
+if(translatTo==="EN"){
+questionText=question.question;
+} else{
+
+let url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl='+ translatFrom+'&tl='+translatTo+'&dt=t&dt=t&q='+question.question;
+  let xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+
+
+
+
+var txt ="";
+for(var l=0;l<this.response.length;l++){
+var l1=l+1;
+if((this.response[l]==='"')&&(this.response[l1]===',')){
+break;
+}
+txt+=this.response[l];
+}
+while(txt[0]==="["){
+txt = txt.replace("[", "");
+}
+
+questionText = txt.replace('"', "");
+
+
+if(questionText===undefined){
+questionText=question.question;
+}
+}
+};
+  xhttp.open("GET", url, false);
+  xhttp.send();
+
+}
+
+start_sound.pause();
+next_question_sound.play();
+let questionNumber = currentQuestionIndex+1;
+question_type_span.innerText="type: "+question.type;
+question_category_span.innerText="category: "+question.category.replace(":", "-");
+const verb = scores_map[question.difficulty]===1?"point":"points";
+const questionDifficultyText="difficulty: "+question.difficulty+", If you answer correctly, you will get "+scores_map[question.difficulty]+verb;
+question_difficulty_span.innerText=questionDifficultyText;
+question_number_span.innerText="Question "+questionNumber+" of "+questions.length+":";
+question_text_pera.style.opacity=1;
+question_text_pera.innerHTML=questionText;
+question.incorrect_answers.forEach(function(answer, index) {
+answer_buttons[index].innerHTML=answer;
+});
+sh("question-box", "block");
+
+}
+function nextQuestion() {
+
+question_text_pera.style.opacity=0;
+if(selectedAnswer===""){
+updateProgressbar(0);
+body.className="";
+sh("question-box", "none");
+sh("form-box", "block");
+alt("Select quiz option:");
+return;
+}
+var msg;
+sh("question-box", "none");
+if(selectedAnswer===questions[currentQuestionIndex].correct_answer){
+correct_answer_sound.play();
+body.className="correct";
+msg ='Correct!';
+score += scores_map[questions[currentQuestionIndex].difficulty];
+score_box.innerText="Your score: "+score;
+} else{
+wrong_answer_sound.play();
+body.className="wrong";
+msg ='Incorrect! correct answer was '+questions[currentQuestionIndex].correct_answer;
+}
+
+
+if(currentQuestionIndex<maximum_questions-1){
+currentQuestionIndex++;
+msg+=". next question is coming!";
+updateProgressbar(currentQuestionIndex);
+alt(msg, true);
+} else{
+updateProgressbar(progressTarget);
+end_sound.play();
+selectedAnswer="";
+next_button.innerText="Restart";
+question_type_span.innerText="";
+question_category_span.innerText="";
+question_difficulty_span.innerText="";
+question_number_span.innerText="";
+question_text_pera.innerHTML="";
+sh("rap-answers", "none");
+sh("next-button", "block");
+sh("question-box", "block");
+msg+=". game over. click restart to restart game with new questions!";
+alt(msg);
+}
+
+
+}
+function selectAnswer(event) {
+select_answer_sound.play();
+selected_answer_button.classList.remove("highlight");
+selected_answer_button = event.target;
+selectedAnswer = selected_answer_button.innerHTML;
+selected_answer_button.classList.add("highlight");
+let msg="You has selected  "+selectedAnswer+", press next to continue!";
+alt(msg);
+sh("next-button", "block");
+}
+function updateProgressbar(progressPercentage) {
+const progress = Math.ceil(progressPercentage / progressTarget * 100);
+progressbar_div.style.width= progress+"%";
+}
+function speakText(event) {
+
+
+
+
+  responsiveVoice.cancel()
+responsiveVoice.speak(event.target.innerText);
+if((event.target.tagName!=="P")||(event.target.tagName!=="SPAN")){
+return;
+}
+
+}
+function creatDropdown(element, data) {
+
+
+data.forEach(function(item) {
+element.innerHTML+="<option value='"+item.id+"'>"+item.name+"</option>";
+});
+}
+function creatShortURL(lnk) {
+var op = lnk;
+//alert(op);
+var rp = op.replace("https://www.dropbox.com/s/", "https://dl.dropboxusercontent.com/s/");
+//alert(rp);
+var p = rp.replace("?dl=0", "");
+var dp = rp.replace("?dl=0", "?dl=1");
+return p;
+}
+creatDropdown(categorys_element, categorys);
+creatDropdown(difficulty_element, difficultys);
+function alt(msg, move=false) {   
+
+sh("alt", "block");
+msg_box.innerHTML = msg;
+msg_box.focus();
+setTimeout(function() {
+sh("alt", "none");
+
+if(move===true){
+printQuestion();
+}
+}, 1000);
+}
+function sh(elem, state) {
+if(document.getElementById(elem)==null){
+alert(elem); }
+else {
+document.getElementById(elem).style.display=state;
+}
+}
+
+            function updateOnlineStatus() {
+
+
+sh("inter", "none");
+sh("page", "block");
+            }
+
+            function updateOfflineStatus() {
+sh("page", "none");
+sh("inter", "block");
+            }
+
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOfflineStatus); 
+
+
+    function checkConnection() {
+        if(navigator.onLine) {
+updateOnlineStatus();
+
+
+
+
+
+
+        } else {
+updateOfflineStatus();
+
+
+        }
+
+    }
+
+
+
+checkConnection();
+</script>
