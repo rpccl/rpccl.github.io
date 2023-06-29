@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Notepad</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+<style>
+.block{
+display:block;
+}
+.none{
+display:none;
+}
+.error{
+color: red; }
+#msg-box{
+visibility:hidden;
+font-size:0px;
+opacity: 0;
+height:1px;
+width:1px;
+position:fixed;
+right:0;
+bottom:0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1class="text center" >Notepad</h1>
+<div id="home-container" class="block">
+<button aria-label="Add new note" id="add-note-button"><i aria-hidden="true" class="fa fa-paper-plane"></i></button>
+</div>
+<div id="category-buttons-container" class="category-c none">
+<button aria-label="Navigate up" class="back-button" data-from="#notes-container" data-target="#home-container">X</button>
+<span aria-hidden="true" class="fa fa-folder-open"></span>
+<h2 aria-live="polite" id="category-title-display"></h2>
+<p id="category-discription-display"></p>
+<p id="category-date-display"></p>
+<button aria-label="edit" class="back-button" id="edet-category-button" data-from="#notes-container" data-target="#category-form-container"><i aria-hidden="true" class="fa fa-edit"></i></button>
+<button aria-label="delete" class="back-button" id="delete-category-button" data-from="#notes-container" data-target="#delete-box"><i aria-hidden="true" class="fa fa-trash"></i></button>
+</div>
+<div id="notes-container" class="category-c none"></div>
+<div id="note-container" class="note-c none"></div>
+<div id="note-buttons-container" class="note-c none">
+<button aria-label="Navigate up" class="back-button" data-target=".category-c">X</button>
+<h2 aria-live="polite" id="note-title-display"></h2>
+<p id="note-discription-display"></p>
+<p id="note-date-display"></p>
+<button class="back-button" id="note-share-button" data-target="share-box">Share</button>
+<button aria-label="Edit" class="back-button" id="edet-note-button" data-from="#note-container" data-target="#note-form-container"><i aria-hidden="true" class="fa fa-edit"></i></button>
+<button aria-label="Delete" class="back-button" id="delete-note-button" data-from="#note-buttons-container" data-target="#delete-box"><i aria-hidden="true" class="fa fa-trash"></i></button>
+</div>
+<div id="note-form-container"class="none">
+<button aria-label="Navigate up" class="back-button"  data-from="#note-form-container" data-target="#home-container" data-default-target="#home-container">X</button>
+<form action="" method="post" id="note-form">
+<fealdset>
+<legend aria-live="polite">Add new note</legend>
+<input type="text" name="note-id" value="" id="note-id" class="none"></input>
+<div class="input-container">
+<label>Title:*</label>
+<input type="text" name="note-title" class="form-input" id="note-title" placeholder="title"></input>
+<span aria-live="polite"></span>
+</div>
+<div class="input-container">
+<label>Your note:*</label>
+<textarea name="note-discription" class="form-input" id="note-discription"></textarea>
+<span aria-live="polite"></span>
+</div>k
+<div class="input-container">
+<label>Category:*</label>
+<select name="note-category" class="form-input" id="note-category"><option value="0">Select category</option></select>
+<span aria-live="polite"></span>
+</div>
+<div class="input-container">
+<input type="submit" value="Save"><i aria-hidden="true" class="fa fa-save"></i></input>
+</div>
+</fealdset>
+</form>
+</div>
+<div id="category-form-container"class="none">
+<button aria-label="Navigate up" class="back-button" data-from="#category-form-container" data-target="#note-form-container" data-default-target="#note-form-container">X</button>
+<form action="" method="post" id="category-form">
+<fealdset>
+<legend aria-live="polite">Create new category</legend>
+<input type="text" name="category-id" value="" id="category-id" class="none"></input>
+<div class="input-container">
+<label>Title:*</label>
+<input type="text" name="category-title" class="form-input" id="category-title" placeholder="title"></input>
+<span aria-live="polite"></span>
+</div>
+<div class="input-container">
+<label>Discription:</label>
+<textarea name="category-discription" class="form-input" id="category-discription"></textarea>
+<span aria-live="polite"></span>
+</div>
+<div class="input-container">
+<input type="submit" value="Save"><i aria-hidden="true" class="fa fa-save"></i></input>
+</div>
+</fealdset>
+</form>
+</div>
+<div class="none" id="delete-box">
+<h4 aria-live="polite">Are you sure?</h4>
+<p>This item will be deleted.</p>
+<button class="back-button" id="cansel-button" data-target=".category-c" data-default-target=".category-c">Cansel</button>
+<button class="back-button" id="okay-button" data-target="#home-container" data-default-target="#home-container">Delete</button>
+</div>
+<div class="none" id="share-box">
+<h4 aria-live="polite">Share</h4>
+</div>
+<div  aria-live="assertive" id="msg-box"></div>
+</div>
+<script>
+const key = "notes";
+const home = document.getElementById("home-container");
+const notes_container = document.getElementById("notes-container");
+const note_container = document.getElementById("note-container");
+const note_form = document.getElementById("note-form");
+const category_form = document.getElementById("category-form");
+const category_title_input = document.getElementById("category-title");
+const category_discription_input = document.getElementById("category-discription");
+const category_id_input = document.getElementById("category-id");
+const category_title_display = document.getElementById("category-title-display");
+const category_discription_display = document.getElementById("category-discription-display");
+const category_date_display = document.getElementById("category-date-display");
+const eddet_category_button = document.getElementById("edet-category-button");
+eddet_category_button.addEventListener("click", function(event) {
+category_form.getElementsByTagName("legend")[0].innerText="Eddet category";
+category_form.parentElement.querySelector(".back-button").dataset.target=".category-c";
+const category = categorys.find(function(c) {
+return c.id===notes_container.dataset.id;
+});
+category_title_input.value=category.title;
+category_discription_input.value=category.discription;
+category_id_input.value=category.id;
+});
+const eddet_note_button = document.getElementById("edet-note-button");
+eddet_note_button.addEventListener("click", function(event) {
+note_form.getElementsByTagName("legend")[0].innerText="Eddet note";
+note_form.parentElement.querySelector(".back-button").dataset.target="#note-buttons-container";
+const note = notes.find(function(n) {
+return n.id===note_container.dataset.id;
+});
+note_title_input.value=note.title;
+note_discription_input.value=note.discription;
+note_id_input.value=note.id;
+   var k, L = note_category_input.options.length - 1;
+   for(k = L; k >= 0; k--) {
+if(note_category_input.options[k].value===note.category){
+note_category_input.options[k].selected=true;
+}
+   }
+});
+const cansel_button = document.getElementById("cansel-button");
+const okay_button = document.getElementById("okay-button");
+okay_button.addEventListener("click", deleteItem);
+function deleteItem(event) {
+
+const id = this.dataset.id;
+if(id.includes("cat")){
+removeItem(id, categorys);
+notes = notes.filter(function(note) {
+return note.category!==id;
+});
+
+updateCategorys();
+if(categorys.length===0){
+localStorage.removeItem(key);
+inet();
+}
+showText("Category deleted.");
+} else{
+const note = notes.find(function(n) {
+return n.id===id;
+});
+const category = categorys.find(function(c) {
+return c.id===note.category;
+});
+category.totleNotes = parseInt(category.totleNotes);
+category.totleNotes--;
+removeItem(id, notes);
+renderNotes.call(notes_container);
+showText("Note deleted.");
+}
+
+save();
+}
+const delete_category_button = document.getElementById("delete-category-button");
+delete_category_button.addEventListener("click", function(event) {
+cansel_button.dataset.target=".category-c";
+okay_button.dataset.target="#home-container";
+okay_button.dataset.id=notes_container.dataset.id;
+});
+const delete_note_button = document.getElementById("delete-note-button");
+delete_note_button.addEventListener("click", function(event) {
+cansel_button.dataset.target="#note-buttons-container";
+okay_button.dataset.target=".category-c";
+okay_button.dataset.id=note_container.dataset.id;
+});
+const add_note_button = document.getElementById("add-note-button");
+const note_title_input = document.getElementById("note-title");
+const note_discription_input = document.getElementById("note-discription");
+const note_category_input = document.getElementById("note-category");
+const note_id_input = document.getElementById("note-id");
+const note_title_display = document.getElementById("note-title-display");
+const note_discription_display = document.getElementById("note-discription-display");
+const note_date_display = document.getElementById("note-date-display");
+note_category_input.addEventListener("change", function(event) {
+if(note_category_input.value==="new"){
+showCategoryForm();
+return;
+}
+});
+const input_elements= document.getElementsByClassName("form-input");
+for(let i=0;i<input_elements.length;i++){
+const input_element = input_elements[i];
+let event = input_element.tagName==="input"?"input":"change";
+input_element.addEventListener(event, removeError);
+}
+let notes = [];
+let categorys = [];
+function inet() {
+let notepad = localStorage.getItem("notes");
+if(notepad===null){
+categorys.push({
+id:makeId(6, "cate_"),
+title:"All notes",
+discription:"",
+totleNotes:0,
+createdAt:Date.now()
+});
+save();
+inet();
+return;
+}
+notepad = JSON.parse(notepad);
+notes = notepad.notes;
+categorys = notepad.categorys;
+updateCategorys();
+}
+function updateCategorys() {
+const category_titles = document.getElementsByClassName("category-title-div");
+for(let i=category_titles.length-1;i>=0;--i){
+category_titles[i].remove();
+}
+   var k, L = note_category_input.options.length - 1;
+   for(k = L; k >= 0; k--) {
+if(note_category_input.options[k].value=="0"){
+continue;
+}
+     note_category_input.remove(k);
+   }
+
+categorys.forEach(addCategory);
+categorys.forEach(renderCategory);
+addCategory({title:"Create new", id:"new"});
+}
+function renderCategory(category){
+if(category.totleNotes==0){
+return;
+}
+const category_element = document.createElement("div");
+category_element.classList.add("category-title-div");
+category_element.dataset.id = category.id;
+category_element.innerText = category.title;
+category_element.addEventListener("click", renderNotes);
+const icon_element = document.createElement("span");
+icon_element.classList.add("fa", "fa-folder");
+icon_element.setAttribute("aria-hidden", "true");
+category_element.append(icon_element);
+home.append( category_element);
+}
+function addCategory(category) {
+const option_element = document.createElement("option");
+option_element.classList.add("category-option");
+ option_element.value = category.id;
+ option_element.innerText = category.title;
+note_category_input.append( option_element);
+}
+function renderNotes(event) {
+sh(home, "none");
+sh(notes_container, "block");
+notes_container.innerHTML="";
+const categoryId = this.dataset.id;
+notes_container.dataset.id=categoryId;
+const allNotes = notes.filter(function(note) {
+return note.category===categoryId;
+});
+allNotes.forEach(renderNoteTitle);
+printCategoryInfo(categoryId);
+}
+function printCategoryInfo(id) {
+const category = categorys.find(function(c) {
+return c.id===id;
+});
+category_title_display.innerText=category.title;
+category_discription_display.innerText=category.discription;
+let dateMsg = "Created at "+formatDate(category.createdAt);
+if(category.updatedAt!==undefined){
+dateMsg+=", updated on "+formatDate(category.updatedAt);
+}
+category_date_display.innerText=dateMsg;
+sh("category-buttons-container", "block");
+}
+function renderNoteTitle(note){
+
+const note_element = document.createElement("div");
+note_element.dataset.id = note.id;
+note_element.innerText = note.title;
+note_element.addEventListener("click", renderNote);
+notes_container.append( note_element);
+}
+function renderNote(event) {
+const noteId = this.dataset.id;
+const note = notes.find(function(n) {
+return n.id===noteId;
+});
+printNoteInfo(note);
+sh("notes-container", "none");
+sh("category-buttons-container", "none");
+sh("note-container", "block");
+sh("note-buttons-container", "block");
+}
+function printNoteInfo(note) {
+note_title_display.innerText=note.title;
+note_discription_display.innerText=note.discription;
+let dateMsg = "Created at "+formatDate(note.createdAt);
+if(note.updatedAt!==undefined){
+dateMsg+=", updated on "+formatDate(note.updatedAt);
+}
+note_date_display.innerText=dateMsg;
+note_container.dataset.id=note.id;
+}
+add_note_button.addEventListener("click", showNoteForm);
+note_form.addEventListener("submit", validetNoteForm);
+category_form.addEventListener("submit", validetCategoryForm);
+function showNoteForm(event) {
+sh(home, "none");
+sh("category-form-container", "none");
+sh("note-form-container", "block");
+note_category_input.options[0].selected=true;
+}
+function highdNoteForm() {
+sh(home, "block");
+sh("note-form-container", "none");
+}
+function showCategoryForm(event) {
+sh("note-form-container", "none");
+sh("category-form-container", "block");
+}
+function validetNoteForm(event) {
+event.preventDefault();
+if(isAmty(note_title_input.value)){
+return showError(note_title_input, "Please enter title.");
+}
+if(isAmty(note_discription_input.value)){
+return showError(note_discription_input, "Please type note.");
+}
+if(isSelected(note_category_input, 0)){
+return showError(note_category_input, "Please select or create category.");
+}
+
+if(isAmty(note_id_input.value)){
+const category = categorys.find(function(c) {
+return c.id===note_category_input.value;
+});
+category.totleNotes = parseInt(category.totleNotes);
+category.totleNotes++;
+if(category.totleNotes===1){
+renderCategory(category);
+}
+notes.push({
+id:makeId(6, "note_"),
+title:note_title_input.value,
+discription:note_discription_input.value,
+category:note_category_input.value,
+createdAt:Date.now()
+});
+showText("Note created.");
+} else{
+const note = notes.find(function(n) {
+return n.id===note_id_input.value;
+});
+note.title = note_title_input.value;
+note.discription = note_discription_input.value;
+note.category = note_category_input.value;
+note.updatedAt = Date.now();
+printNoteInfo(note);
+if(notes_container.dataset.id!==note_category_input.value){
+const aldCategory = categorys.find(function(c) {
+return c.id===notes_container.dataset.id;
+});
+aldCategory.totleNotes = parseInt(aldCategory.totleNotes);
+aldCategory.totleNotes--;
+}
+renderNotes.call(notes_container);
+sh(notes_container, "none");
+sh("category-buttons-container", "none");
+showText("Note edited.");
+}
+save();
+note_form.parentElement.querySelector(".back-button").dispatchEvent(new Event("click", {bubbles:true}));
+note_form.getElementsByTagName("legend")[0].innerText="Create new note";
+note_form.reset();
+}
+function validetCategoryForm(event) {
+event.preventDefault();
+
+if(isAmty(category_title_input.value)){
+return showError(category_title_input, "Please enter title.");
+}
+if(isAmty(category_id_input.value)){
+categorys.push({
+id:makeId(6, "cate_"),
+title:category_title_input.value,
+discription:category_discription_input.value,
+totleNotes:0,
+createdAt:Date.now()
+
+});
+showText("Category Created.");
+} else{
+const category = categorys.find(function(c) {
+return c.id===category_id_input.value;
+});
+category.title = category_title_input.value;
+category.discription = category_discription_input.value;
+category.updatedAt=Date.now();
+renderNotes.call(notes_container);
+showText("Category edited.");
+}
+save();
+category_form.parentElement.querySelector(".back-button").dispatchEvent(new Event("click", {bubbles:true}));
+category_form.getElementsByTagName("legend")[0].innerText="Create new category";
+updateCategorys();
+note_category_input.options[note_category_input.options.length-2].selected=true;
+category_form.reset();
+}
+function save() {
+localStorage.setItem(key, JSON.stringify({categorys:categorys,notes:notes}));
+}
+function removeItem(id, list) {
+for(let i=list.length-1;i>=0;--i){
+if(list[i].id===id){
+list.splice(i, 1);
+}
+}
+}
+function showError(element, error="Error") {
+if(element===null){
+return alert(element);
+}
+const error_span = element.parentElement.querySelector("span");
+if(error_span===null){
+return alert(element);
+}
+element.classList.add("error");
+error_span.classList.add("error", "blink");
+
+error_span.innerText=error;
+return false;
+}
+function removeError() {
+const error_span = this.parentElement.querySelector("span");
+this.classList.remove("error");
+if(error_span===null){
+return;
+}
+error_span.classList.remove("error", "blink");
+error_span.innerText="";
+}
+function isAmty(value) {
+return value==="";
+}
+function isTypeOf(value, type) {
+if(!type.test(value)){
+return false;
+}
+return true;
+}
+function isInLength(value, minLength, maxLength=100) {
+return value.length<minLength||value.length>maxLength;
+
+}
+function isSelected(dropdown_element, index) {
+return dropdown_element.selectedIndex===index;
+}
+function formatDate(dateString) {
+return new Date(dateString).toLocaleString();
+}
+function makeId(length=6, preFix="id") {
+
+   const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   const charactersLength = characters.length;
+   let result           = '';
+   for ( let i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return preFix+result;
+}
+function sh(element, state) {
+if(typeof element==="string"){
+element = document.getElementById(element);
+}
+if(element===null){
+alert(element);
+return;
+}
+if(state==="block"){
+element.classList.remove("none");
+element.classList.add("block");
+} else{
+element.classList.remove("block");
+element.classList.add("none");
+}
+}
+const back_buttons = document.getElementsByClassName("back-button");
+for(let i=0;i<back_buttons.length;i++){
+back_buttons[i].addEventListener("click", goBack);
+}
+function goBack(event) {
+sh(this.parentElement, "none");
+if(this.dataset.from!==undefined){
+const target_elements = document.querySelectorAll(this.dataset.from);
+for(let j=0;j<target_elements.length;++j){
+sh(target_elements[j], "none");
+}
+}
+const target_elements = document.querySelectorAll(this.dataset.target);
+for(let j=0;j<target_elements.length;++j){
+sh(target_elements[j], "block");
+}
+if(this.dataset.defaultTarget!==undefined){
+this.dataset.target=this.dataset.defaultTarget;
+}
+}
+const msg_container = document.getElementById("msg-box");
+function showText(text, after=1000) {
+msg_container.innerText=text;
+setTimeout(function() {
+msg_container.innerText="";
+}, after);
+}
+inet();
+</script>
+</body>
+</html>
