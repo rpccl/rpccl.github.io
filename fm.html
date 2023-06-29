@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="HandheldFriendly" content="true">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=no">
+
+
+
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style type="text/css">
+html, body {
+padding: 0; margin: 0; width: 100%; height: 100%; font-family: Arial;background-color: #191970;}
+*, *::before, *::after {
+  box-sizing: border-box;}
+#dialogue-box {
+margin: auto;position: fixed;     top: 35%;    opacity: 1; width: 99%;  height: auto; display: none; }
+#dialogue-box>div {
+width: 80%;background-color: #fff;  color: #000; font-size: 10px;}
+.no-clear {
+border: 1px solid #000; border-radius: 10px; background-color: green; color: #fff; font-size:10px; height:35px;width: 145px; }
+
+
+
+  .no-copy { 
+      -webkit-user-select: none;       -webkit-touch-callout: none;       -moz-user-select: none;       -ms-user-select: none;       user-select: none;}
+.state-button, .station-button, .active-station-button {
+	width: 90%;	border: 0.5px solid #fff;border-radius: 10px;	font-size: 10px;	margin: auto;	background-color: #000;color: #fff;text-align: left;    display: flex;    justify-content: center;    align-items: left;}
+.state-button {
+height: 40px;}
+.station-button {
+height: 60px;}
+input {
+height: auto;color: black;width: 100px;border: 2px solid #000;border-radius: 10px; padding: 0px; }
+.btn {
+   background-color: #191970;border-radius: 5px;font-size: 0px;   height:50px;   width:80px;   cursor:pointer;}
+.fa {
+color: #fff;font-size: 30px;}
+
+
+.section-discription, .radio-section, .state-section, #clear-button, #close-button, .favourite-button, #player, #station-name, #dialogue-box{
+display:none;}
+#main-rapper, #button-rapper, #radio-rapper, #favourites{
+display:block;}
+#st, b, header {
+color:White;}
+
+#alt {
+    height: 40px;     position: fixed;     bottom:5%;    width:100%;     opacity: 1;color: #fff;	font-size: 10px;text-align: center; background-color: #000; }
+.container2 {
+border:4px dotted blue;    border-radius: 30px;    background-color: red;color: #fff;    padding: 20px;text-align:center;display:none;}
+#top-rapper {
+position: sticky; top: 0%;    opacity: 1; width: 99%;  height: auto; display: block; background-color: #191970; }
+.section-button {
+height: 30px;  background-color: orange;  color: #000;  float: left;margin-left: 3%;  border: none;  outline: none;  cursor: pointer;  padding: 0px;  font-size: 10px;  width: 29%;text-align: center;    display: flex;    justify-content: center;    align-items: center;}
+.active, .section-button:hover {
+text-align: center; background-color: #fff;  color: black;border: 2px solid black;border-radius: 10px; font-weight: bold; }
+/*.favourite-station-button{
+text-align: center; color: yellow;border: 4px solid black;border-radius: 10px; font-weight: bold; }*/
+.active-station-button{
+	width: 90%;	border: 3px solid #000;border-radius: 10px;	font-size: 20px;	margin: auto;	background-color: #ffff66;color: blue;text-align: left;    display: flex;    justify-content: center;    align-items: left; font-weight: bold; }
+#clear-button {
+margin-right: 3%; float:  right; }
+#close-button {
+margin-left: 3%; float:  left;}
+#clear-favourites-button {
+font-weight: bold; height: 30px;  background-color: red;  color: #fff;  border: none;  outline: none;  cursor: pointer;  padding: 0px;  font-size: 10px;  width: 60%;text-align: center;    display: flex;    justify-content: center;    align-items: center; }
+</style>
+<title>FM Radio</title>
+</head>
+
+<body class="no-copy">
+
+
+
+
+
+
+<div class="container2 box" id="inter">
+<div id="st" aria-live="assertive">You los internet connection!</div>
+<b>Pleas Try:</b>
+<ul>
+<li>Turning on mobile data or WiFi.</li>
+
+<li>Checking the signal in your area.</li>
+
+<li>Turning off airplane mode.</li>
+<li>Turning off power saving mode.</li>
+</ul>
+
+
+
+ </div>
+<div id="page">
+<div id="main-rapper" align="center">
+<div id="top-rapper" align="center"><br>
+<div id="scirch-rapper">
+<input type="scirch" id="scirch-input" oninput="scirch()" placeholder="Scirch stations. enter keyword."></input>
+<div role="button" aria-label="Clear scirch" id="clear-button" onclick="clearScirch()"><i class="fa fa-close" style="font-size:25px;color:red"></i></div>
+<br>
+<b aria-live="polite" id="totle-result"></b>
+<br>
+</div>
+<div id="button-rapper"></div>
+<div role="button" aria-label="Close" title="Back to list." id="close-button" onclick="changeStyle()"><i class="fa fa-close" style="font-size:25px;color:red"></i></div>
+<div id="player">
+<header aria-live="polite" id="station-name">Station:</header>
+<br>
+<button class="btn" id="pb" onclick="prs()">Previous station<i class="fa fa-fast-backward"></i></button>
+<button class="btn" id="ppb" onclick="playpause()">Play<i aria-hidden=true class="pp fa fa-play"></i></button>
+<button class="btn" id="nb" onclick="nxt()">Next station<i class="fa fa-fast-forward"></i></button>
+<br>
+
+</div>
+</div>
+<br>
+<div id="radio-rapper"></div>
+</div>
+<div id="dialogue-box" align="center"><div><br>
+<p aria-live="polite">Are you sure? Do you want to clear your favourite list? You will be not able to restore it again.</p>
+<div style="text-align: centre">
+<br>
+<button class="no-clear" onclick="cansle('Ok, enjoy your favourite radio stations!')">No</button>
+<button class="no-clear" onclick="ok()">Clear</button>
+ <br> <br>
+</div>  </div></div>
+</div>
+<div class="box" id="alt" aria-live="assertive" style ="display:none" align = "center">
+<p id="cpy"></p>
+</div>
+<audio id="audio" onplaying="b()" onerror="alt('Please, try again after sometimes. or contact us.')"></audio>
+<script>
+'use strict';
+const scirch_input = document.getElementById("scirch-input");
+const totle_scirch_result_pera = document.getElementById("totle-result");
+const play_button = document.getElementById("ppb");
+const player = document.getElementById("audio");
+const station_name_div = document.getElementById("station-name");
+const button_div = document.getElementById("button-rapper");
+const main_div = document.getElementById("radio-rapper");
+let allButtons;
+let first_element;
+let last_element;
+let current_button;
+let last_section_button;
+let last_category_button;
+let favourite = {name:"My favourites",categorys:[{name:"favourites",stations:[],status:"added"}],status:"added"};
+let userFavouritesString = localStorage.getItem("my-favourites");
+let favouritData =[];
+let hasFavourites = false;
+function render() {
+getData("https://dl.dropboxusercontent.com/s/150cw9j8r6b119g/radiostations.txt")
+.then(function(json) {
+const ids=["p1","p2","p3"];
+let counter = 0;
+const stations = JSON.parse(json);
+stations.forEach(function(category) {
+category.categorys.sort(function(a, b){
+  const x = a.name.toLowerCase();
+  const y = b.name.toLowerCase();
+  if (x < y) {return -1;}
+  if (x > y) {return 1;}
+  return 0;
+});
+category.categorys.forEach(function(state) {
+if(state.name!=='favourites'){
+state.stations.sort(function(a, b){
+  const x = filter(a.title).toLowerCase();
+  const y = filter(b.title).toLowerCase();
+  if (x < y) {return -1;}
+  if (x > y) {return 1;}
+  return 0;
+});
+}
+});
+});
+if( userFavouritesString!==null){
+hasFavourites = true;
+let favouritData1 = JSON.parse( userFavouritesString);
+favouritData = favouritData1.reverse();
+favouritData.forEach(function(item) {
+const radioStation = stations[parseInt(item.mainIndex)].categorys[parseInt(item.categoryIndex)].stations[parseInt(item.stationIndex)];
+radioStation.mainIndex=item.mainIndex;
+radioStation.categoryIndex=item.categoryIndex;
+radioStation.stationIndex=item.stationIndex;
+favourite.categorys[0].stations.push(radioStation);
+});
+}
+stations.push(favourite);
+stations.forEach(function(category, index) {
+if(category.status==="added"){
+
+const sectionId =createId(category.name);
+const button = document.createElement("button");
+button.classList.add("section-button");
+button.innerText=category.name;
+button.setAttribute("data-target", sectionId);
+button.setAttribute("aria-labelledby", ids[counter]);
+button.title="Click to expand.";
+button.addEventListener("click", openSection);
+button_div.appendChild(button);
+const pera = document.createElement("p");
+pera.classList.add("section-discription");
+pera.id=ids[counter];
+pera.innerText=category.name;
+main_div.appendChild(pera);
+const div = document.createElement("div");
+div.id=sectionId;
+div.classList.add("radio-section");
+main_div.appendChild(div);
+counter++;
+category.categorys.forEach(function(state, categoryIndex) {
+if(state.status==="added"){
+const stateId =createId(state.name);
+const state_div = document.createElement("div");
+const state_button = document.createElement("button");
+state_button.classList.add("state-button");
+state_button.innerText=state.name;
+state_button.title="Click to view all stations in "+state.name;
+state_button.setAttribute("data-target", stateId);
+state_button.addEventListener("click", showSection);
+if(state.name.includes("favourite")){
+state_div.setAttribute("data-favourite", "yes");
+state_button.classList.add("favourite-button");
+const clear_button = document.createElement("button");
+clear_button.id="clear-favourites-button";
+clear_button.innerText="Clear my favorites";
+clear_button.addEventListener("click", clearFavourites);
+const clear_icon = document.createElement("i");
+clear_icon.classList.add("material-icons");
+clear_icon.classList.add("c-b");
+clear_button.appendChild(clear_icon);
+div.appendChild(clear_button);
+}
+div.appendChild(state_button);
+state_div.id=stateId;
+state_div.classList.add("state-section");
+div.appendChild(state_div);
+state.stations.forEach(function(station, stationIndex) {
+if(station.status==="added"){
+const stationName =filter(station.title);
+const station_button = document.createElement("button");
+station_button.classList.add("station-button");
+station_button.innerText=stationName;
+station_button.setAttribute("data-name", stationName);
+station_button.setAttribute("data-poster", station.poster);
+station_button.setAttribute("data-url", station.file);
+let title = "Click to play, long press to ";
+if(station.mainIndex!==undefined){
+station_button.classList.add("favourite-station-button");
+const id = "favourite-"+createId(stationName);
+station_button.id=id;
+title += "remove "+stationName+" from the favourites.";
+station_button.setAttribute("data-index1", station.mainIndex);
+station_button.setAttribute("data-index2", station.categoryIndex);
+station_button.setAttribute("data-index3", station.stationIndex);
+} else{
+station_button.setAttribute("data-index1", index);
+station_button.setAttribute("data-index2", categoryIndex);
+station_button.setAttribute("data-index3", stationIndex);
+allButtons = document.getElementsByClassName("station-button");
+title += "add "+stationName+" to the favourites.";
+}
+station_button.setAttribute("title", title);
+station_button.addEventListener("click", playStation);
+station_button.addEventListener("contextmenu", modifyFavourites);
+state_div.appendChild(station_button);
+}
+});
+}
+});
+}
+});
+
+});
+}
+function modifyFavourites(event) {
+const button = event.target;
+const data = button.dataset;
+const id = "favourite-"+createId(data.name);
+if(isFavourite(data)===true){
+for(let i=favouritData.length-1;i>=0;i--){
+if(favouritData[i].mainIndex!=data.index1){
+continue;
+}
+if(favouritData[i].categoryIndex!=data.index2){
+continue;
+}
+if(favouritData[i].stationIndex===data.index3){
+favouritData.splice(i, 1);
+break;
+}
+}
+button.title="Click to play, long press to add "+data.name+" to the favourites";
+button.classList.remove("favourit-station-button");
+localStorage.setItem("my-favourites", JSON.stringify(favouritData));
+sh(id, "none");
+if(button.parentElement.dataset.favourite==="yes"){
+button.remove();
+}
+let msg = data.name+" removed from the favourits!";
+const button1 = document.getElementById(id);
+button1.remove();
+if(favouritData.length===0){
+msg+=" Your entire favourite list has been cleared.";
+localStorage.removeItem("my-favourites");
+hasFavourites = false;
+}
+alt(msg);
+} else{
+hasFavourites = true;
+button.title="Click to play, long press to remove "+data.name+" from the favourites";
+const stationData={mainIndex:data.index1,categoryIndex:data.index2,stationIndex:data.index3};
+favouritData.push(stationData);
+const cln = clone(button);
+
+cln.id=id;
+const favourite_div = document.getElementById("favourites");
+favourite_div.insertBefore(cln, favourite_div.firstElementChild);
+localStorage.setItem("my-favourites", JSON.stringify(favouritData));
+const msg = data.name+" added to the favourits!";
+alt(msg);
+}
+
+}
+function clone(element) {
+const data = element.dataset;
+const station_button = document.createElement("button");
+station_button.classList.add("station-button");
+station_button.classList.add("favourit-station-button");
+station_button.innerText=data.name;
+station_button.setAttribute("data-name", data.name);
+station_button.setAttribute("data-poster", data.poster);
+station_button.setAttribute("data-url", data.url);
+station_button.setAttribute("data-index1", data.index1);
+station_button.setAttribute("data-index2", data.index2);
+station_button.setAttribute("data-index3", data.index3);
+let title = "Click to play, long press to remove "+data.name+" from the favourites.";
+station_button.classList.add("favourite-station-button");
+station_button.setAttribute("title", title);
+station_button.addEventListener("click", playStation);
+station_button.addEventListener("contextmenu", modifyFavourites);
+return station_button;
+}
+function isFavourite(item) {
+for(let i=favouritData.length-1;i>=0;i--){
+if(favouritData[i].mainIndex!=item.index1){
+continue;
+}
+if(favouritData[i].categoryIndex!=item.index2){
+continue;
+}
+if(favouritData[i].stationIndex==item.index3){
+return true;
+}
+}
+return false;
+}
+function clearFavourites(event) {
+if(hasFavourites===false){
+alt("You don't have any stations added as a favourite. Just long press any station to add to the favourite list!");
+return;
+}
+
+sh("dialogue-box", "block");
+sh("main-rapper", "none");
+}
+function ok() {
+hasFavourites = false;
+favouritData=[];
+localStorage.removeItem("my-favourites");
+document.getElementById("favourites").innerHTML="";
+const buttons = document.getElementsByClassName("favourite-station-button");
+for(let r=0;r<buttons.length;r++){
+buttons[r].classList.remove("favourit-station-button");
+let title = buttons[r].title;
+title = title.replace("remove", "add");
+title = title.replace("from the", "to the");
+buttons[r].setAttribute("title", title);
+}
+cansle("Your entire favourite list has been cleared.");
+}
+function cansle(m) {
+sh("dialogue-box", "none");
+sh("main-rapper", "block");
+alt(m);
+}
+function playStation(event) {
+const button = event.target;
+
+updatePlayer(button);
+}
+function updatePlayer(station_button) {
+if(station_button===null){
+alt("Please, change category to view more stations.");
+return;
+}
+first_element = station_button.parentElement.firstElementChild;
+last_element = station_button.parentElement.lastElementChild;
+if(station_button===first_element){
+first_element=null;
+}
+if(station_button===last_element){
+last_element=null;
+}
+const data = station_button.dataset;
+player.src=data.url;
+station_name_div.innerText=data.name;
+sh("station-name", "block");
+player.play();
+sh("player", "block");
+if(current_button!==undefined){
+current_button.classList.remove("active-station-button");
+}
+current_button = station_button;
+current_button.classList.add("active-station-button");
+}
+function showSection(event) {
+const element = event.target;
+last_category_button = element;
+changeStyle("none");
+let data = element.dataset;
+sh(data.target, "block");
+//sh("clear-favourites-button", "none");
+const alertMSG = "Selected, "+element.innerText;
+alt(alertMSG);
+}
+function changeStyle(value="block", move=false) {
+section(value);
+
+const state_buttons = document.getElementsByClassName("state-button");
+const state_divs = document.getElementsByClassName("state-section");
+for(let i=0;i<state_buttons.length;i++){
+state_buttons[i].style.display=value;
+state_divs[i].style.display="none";
+}
+if(value==="block"){
+sh("close-button", "none");
+} else{
+sh("close-button", "block");
+sh("clear-favourites-button", "block");
+}
+
+player.pause();
+play_button.innerHTML="Play<i aria-hidden=true class='pp fa fa-play'></i>";
+sh("player", "none");
+if(move===true){
+for(let b=0;b<allButtons.length;b++){
+allButtons[b].style.display="block";
+}
+}
+}
+function section(value) {
+const sections_buttons = document.getElementsByClassName("section-button");
+for(let j=0;j<sections_buttons.length;j++){
+sections_buttons[j].style.display=value;
+}
+}
+function scirch() {
+const keyWords = scirch_input.value.toLowerCase();
+if(keyWords===""){
+alt("Search box cleared!");
+totle_scirch_result_pera.innerText="";
+sh("clear-button", "none");
+changeStyle("block", true);
+section("block");
+if(last_section_button!==undefined){
+setTimeout(function() {
+last_section_button.click();
+if(last_category_button!==undefined){
+setTimeout(function() {
+last_category_button.click();
+}, 700);
+}
+}, 700);
+}
+sh("close-button", "none");
+sh("All-india-radio", "none");
+sh("FM-radio", "none");
+return;
+}
+sh("clear-button", "block");
+changeStyle("none");
+let scirchCounter = 0;
+for(let b=0;b<allButtons.length;b++){
+let button = allButtons[b];
+if(button.innerText.toLowerCase().includes(keyWords)){
+button.style.display="block";
+button.parentElement.style.display="block";
+button.parentElement.parentElement.style.display="block";
+scirchCounter++;
+} else{
+button.style.display="none";
+}
+
+}
+totle_scirch_result_pera.innerText=scirchCounter+" Results found.";
+sh("close-button", "none");
+}
+function clearScirch() {
+scirch_input.value="";
+scirch();
+}
+function openSection(event) {
+const element = event.target;
+last_section_button = element;
+const sections_buttons = document.getElementsByClassName("section-button");
+const sections_discriptions_peras = document.getElementsByClassName("section-discription");
+let data = element.dataset;
+for(let i=0;i<sections_buttons.length;i++){
+let buttonData = sections_buttons[i].dataset;
+let target_div_id = buttonData.target;
+ sections_discriptions_peras[i].innerText= sections_buttons[i].innerText;
+sections_buttons[i].title="Click to expand.";
+if( target_div_id===data.target){
+ sections_discriptions_peras[i].innerText= "Selected, "+sections_buttons[i].innerText;
+}
+sections_buttons[i].className=sections_buttons[i].className.replace("active", "");
+sh( target_div_id, "none");
+}
+sh(data.target, "block");
+sh("favourites", "block");
+document.getElementsByClassName('favourite-button')[0].style.display="none";
+element.className=element.className+" active";
+element.title="";
+const alertMSG = "Selected, "+element.innerText;
+alt(alertMSG);
+}
+function playpause() {
+if(player.paused==true){
+player.play();
+
+alt("Playing");
+} else{
+player.pause();
+play_button.innerHTML="Play<i aria-hidden=true class='pp fa fa-play'></i>";
+alt('Paused');
+}
+
+}
+function b() {
+play_button.innerHTML="pause<i aria-hidden=true class='pp fa fa-pause'></i>";
+}
+
+function nxt() {
+
+
+
+try{
+const next_station_button = current_button.nextSibling;
+if(next_station_button===null){
+
+updatePlayer(first_element);
+return;
+}
+if(next_station_button.parentElement===current_button.parentElement){
+updatePlayer(next_station_button);
+return;
+}
+updatePlayer(first_element);
+}
+catch(e){
+//alert(e);
+}
+}
+function prs() {
+const previous_station_button = current_button.previousSibling;
+if(previous_station_button===null){
+
+updatePlayer(last_element);
+return;
+}
+if(previous_station_button.parentElement===current_button.parentElement){
+updatePlayer(previous_station_button);
+return;
+}
+updatePlayer(last_element);
+}
+function getData(url) {
+
+
+return new Promise(function(done, fail) {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+
+
+
+done(this.response);
+}
+  };
+  xhttp.open("GET", url, true);
+  xhttp.send();
+
+});
+}
+function filter(str) {
+const arr = str.split(".");
+if(arr.length>1){
+arr[0]="";
+}
+return arr.join("");
+}
+function createId(str) {
+while(str.includes(" ")){
+str = str.replace(" ", "-");
+}
+return str;
+}
+const msg_box = document.getElementById("cpy");
+
+
+
+function alt(msg) {   
+
+sh("alt", "block");
+msg_box.innerHTML = msg;
+msg_box.focus();
+setTimeout(function() {
+sh("alt", "none");
+
+
+}, 1000);
+}
+function sh(elem, state) {
+if(document.getElementById(elem)==null){
+alert(elem); }
+else {
+document.getElementById(elem).style.display=state;
+}
+}
+
+            function updateOnlineStatus() {
+
+
+sh("inter", "none");
+sh("page", "block");
+            }
+
+            function updateOfflineStatus() {
+sh("page", "none");
+sh("inter", "block");
+            }
+
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOfflineStatus); 
+
+
+    function checkConnection() {
+        if(navigator.onLine) {
+updateOnlineStatus();
+
+
+
+
+
+
+render();
+        } else {
+updateOfflineStatus();
+
+
+        }
+
+    }
+
+
+
+checkConnection();
+</script>
+</body>
+</html>
