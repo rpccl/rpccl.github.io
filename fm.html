@@ -31,12 +31,12 @@ paragraph.textContent = words[currentWordIndex++];
 // Use the Speech Synthesis API to speak the word
 //const speech = new SpeechSynthesisUtterance(paragraph.textContent);
 //window.speechSynthesis.speak(speech);
-Const speech = paragraph.textContent;
+const speech = paragraph.textContent;
 const str = speech+" "+speech.split('').join(' ');
 play(str);
 } else {
 paragraph.textContent = "End of the paragraph";
-Play("Thank you so much, Amisha.");
+play("Thank you so much, Amisha.");
 }
 }
 userInput.addEventListener('input', () => {
