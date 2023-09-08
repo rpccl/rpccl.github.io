@@ -23,7 +23,7 @@ function play(str) {
 
 
   responsiveVoice.cancel()
-responsiveVoice.speak(str, 'Hindi Female');
+responsiveVoice.speak(str);
 }
 function speakNextWord() {
 if (currentWordIndex < words.length) {
@@ -31,18 +31,20 @@ paragraph.textContent = words[currentWordIndex++];
 // Use the Speech Synthesis API to speak the word
 //const speech = new SpeechSynthesisUtterance(paragraph.textContent);
 //window.speechSynthesis.speak(speech);
+Const speech = paragraph.textContent;
 const str = speech+" "+speech.split('').join(' ');
 play(str);
 } else {
 paragraph.textContent = "End of the paragraph";
+Play("Thank you so much, Amisha.");
 }
 }
 userInput.addEventListener('input', () => {
 if (currentWordIndex < words.length) {
 const valueWord = userInput.value.split(" ");
-const inputWord = [valueWord.length-1].trim();
+const inputWord = valueWord[valueWord.length-1].trim();
 const currentWord = words[currentWordIndex];
-if (inputWord === currentWord) {
+if (inputWord.toLowerCase() === currentWord.toLowerCase()) {
 speakNextWord();
 }
 }
