@@ -1,75 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script>
-<title>Paragraph Dictator</title>
-<style>
-body { font-family: Arial, sans-serif; text-align: center; } .container { margin-top: 50px; } .paragraph { font-size: 24px; font-weight: bold; margin-bottom: 20px; } #userInput { font-size: 16px; padding: 5px 10px; } 
-</style>
-</head>
-<body>
-<div class="container">
-<div class="paragraph" id="paragraph"></div>
-<input type="text" id="userInput" placeholder="Start typing...">
-</div>
-<script>
-const paragraph = document.getElementById('paragraph');
-const userInput = document.getElementById('userInput');
-let words = [];
-let currentWordIndex = 0;
-function play(str) {
-
-
-
-  responsiveVoice.cancel()
-responsiveVoice.speak(str);
+<!DOCTYPE html> 
+ <html lang="en"> 
+ <head> 
+ <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+ <script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script> 
+ <title>Paragraph Dictator</title> 
+ <style> 
+ body { font-family: Arial, sans-serif; text-align: center; } .container { margin-top: 50px; } .paragraph { font-size: 24px; font-weight: bold; margin-bottom: 20px; } #userInput { font-size: 16px; padding: 5px 10px; }  
+ </style> 
+ </head> 
+ <body> 
+ <div class="container"> 
+ <div class="paragraph" id="paragraph"></div> 
+ <input type="text" id="userInput" placeholder="Start typing..."> 
+ </div> 
+ <script> 
+ const paragraph = document.getElementById('paragraph'); 
+ const userInput = document.getElementById('userInput'); 
+ let words = []; 
+ let currentWordIndex = 0; 
+ function play(str) { 
+     responsiveVoice.cancel() 
+ responsiveVoice.speak(str); 
+ } 
+ function speakNextWord() { 
+ if (currentWordIndex < words.length) { 
+ paragraph.textContent = words[currentWordIndex]; 
+ // Use the Speech Synthesis API to speak the word 
+ //const speech = new SpeechSynthesisUtterance(paragraph.textContent); 
+ //window.speechSynthesis.speak(speech); 
+ const speech = paragraph.textContent; 
+ const str = speech+". "+speech.split('').join(' '); 
+ play(str); 
+ } else { 
+ paragraph.textContent = "End of the paragraph"; 
+ play("Thank you so much, Amisha."); 
+ } 
+ } 
+ userInput.addEventListener('input', () => { 
+If(userInput.value[userInput.value.length-1]===";") {
+ speakNextWord(); 
+userInput.value=userInput.value.replace(";", "");
 }
-function speakNextWord() {
-if (currentWordIndex < words.length) {
-paragraph.textContent = words[currentWordIndex++];
-// Use the Speech Synthesis API to speak the word
-//const speech = new SpeechSynthesisUtterance(paragraph.textContent);
-//window.speechSynthesis.speak(speech);
-const speech = paragraph.textContent;
-const str = speech+" "+speech.split('').join(' ');
-play(str);
-} else {
-paragraph.textContent = "End of the paragraph";
-play("Thank you so much, Amisha.");
-}
-}
-userInput.addEventListener('input', () => {
-if (currentWordIndex < words.length) {
-const valueWord = userInput.value.split(" ");
-const inputWord = valueWord[valueWord.length-1].trim();
-const currentWord = words[currentWordIndex];
-if (inputWord.toLowerCase() === currentWord.toLowerCase()) {
-speakNextWord();
-}
-}
-});
-userInput.addEventListener('keydown', (e) => {
-if (e.key === 'Semicolon') {
-e.preventDefault();
-// Prevent the semicolon character from being entered
-if (currentWordIndex > 0) {
-currentWordIndex--;
-// Repeat the last spoken word
-speakNextWord();
-}
-} else if (e.key === ' ' && e.code === 'Space') {
-//e.preventDefault();
-// Prevent the space key from entering a space in the input box
-//speakNextWord();
-}
-});
-// Sample long paragraph for testing
-const sampleParagraph = "This is a long paragraph. It will be spoken word by word as you type. Use the semicolon key to repeat the last word.";
-// Split the paragraph into words
-words = sampleParagraph.split(' ');
-// Initialize the speaking process
-speakNextWord(); 
-</script>
-</body>
-</html> 
+ if (currentWordIndex <=words.length) { 
+ const valueWord = userInput.value.split(" "); 
+ const inputWord = valueWord[valueWord.length-1].trim(); 
+ const currentWord = words[currentWordIndex]; 
+ if (inputWord.toLowerCase() === currentWord.toLowerCase()) { 
+currentWordIndex++;
+ speakNextWord(); 
+ } 
+ } 
+ }); 
+/*
+ userInput.addEventListener('keydown', (e) => { 
+ if (e.key === 'Semicolon') { 
+ e.preventDefault(); 
+ // Prevent the semicolon character from being entered 
+ if (currentWordIndex > 0) { 
+ currentWordIndex--; 
+ // Repeat the last spoken word 
+ speakNextWord(); 
+ } 
+ } else if (e.key === ' ' && e.code === 'Space') { 
+ //e.preventDefault(); 
+ // Prevent the space key from entering a space in the input box 
+ //speakNextWord(); 
+ } 
+ }); 
+*/
+ // Sample long paragraph for testing 
+ const sampleParagraph = "This is a long paragraph. It will be spoken word by word as you type. Use the semicolon key to repeat the last word."; 
+ // Split the paragraph into words 
+ words = sampleParagraph.split(' '); 
+ // Initialize the speaking process 
+ speakNextWord();  
+ </script> 
+ </body> 
+ </html> 
