@@ -44,7 +44,7 @@
 
      responsiveVoice.cancel() 
 
- responsiveVoice.speak(str); 
+ responsiveVoice.speak(str, "UK English Male"); 
 
  } 
 
@@ -104,7 +104,7 @@ currentWordIndex++;
 
  // Split the paragraph into words 
 
- words = sampleParagraph.split(' '); 
+ words = removePunctuation(sampleParagraph).split(' '); 
 
  // Initialize the speaking process 
 
@@ -116,7 +116,7 @@ currentWordIndex=0;
 
 
 function removePunctuation(inputString) {
-return inputString;
+//return inputString;
   // Use a regular expression to match all punctuation characters
   // \p{P} matches any Unicode punctuation character
   const regex = /[^\p{L}\p{N}\s]+/gu;
