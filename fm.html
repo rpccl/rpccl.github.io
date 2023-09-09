@@ -1,162 +1,135 @@
-<!DOCTYPE html> 
 
- <html lang="en"> 
+<!DOCTYPE html> 
 
- <head> 
+ <html lang="en"> 
 
- <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+ <head> 
 
- <script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script> 
+ <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 
- <title>Paragraph Dictator</title> 
+ <script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script> 
 
- <style> 
+ <title>Paragraph Dictator</title> 
 
- body { font-family: Arial, sans-serif; text-align: center; } .container { margin-top: 50px; } .paragraph { font-size: 24px; font-weight: bold; margin-bottom: 20px; } #userInput { font-size: 16px; padding: 5px 10px; }  
+ <style> 
 
- </style> 
+ body { font-family: Arial, sans-serif; text-align: center; } .container { margin-top: 50px; } .paragraph { font-size: 24px; font-weight: bold; margin-bottom: 20px; } #userInput { font-size: 16px; padding: 5px 10px; }  
 
- </head> 
+ </style> 
 
- <body> 
+ </head> 
 
- <div class="container"> 
+ <body> 
 
- <div class="paragraph" id="paragraph"></div> 
+ <div class="container"> 
 
- <input type="text" id="userInput" placeholder="Start typing..."> 
+ <div class="paragraph" id="paragraph"></div> 
 
- </div> 
+ <input type="text" id="userInput" placeholder="Start typing..."> 
+
+ </div> 
 
 <button onclick="start()">Start</button>
- <script> 
+ <script> 
 
- const paragraph = document.getElementById('paragraph'); 
+ const paragraph = document.getElementById('paragraph'); 
 
- const userInput = document.getElementById('userInput'); 
+ const userInput = document.getElementById('userInput'); 
 
- let words = []; 
+ let words = []; 
 
- let currentWordIndex = 0; 
+ let currentWordIndex = 0; 
 
- function play(str) { 
+ function play(str) { 
 
-     responsiveVoice.cancel() 
+     responsiveVoice.cancel() 
 
- responsiveVoice.speak(str); 
+ responsiveVoice.speak(str); 
 
- } 
+ } 
 
- function speakNextWord() { 
+ function speakNextWord() { 
 
- if (currentWordIndex < words.length) { 
+ if (currentWordIndex < words.length) { 
 
- paragraph.textContent = words[currentWordIndex]; 
+ paragraph.textContent = words[currentWordIndex]; 
 
- // Use the Speech Synthesis API to speak the word 
+ const speech = paragraph.textContent; 
 
- //const speech = new SpeechSynthesisUtterance(paragraph.textContent); 
+ const str = speech+". "+speech.split('').join(' '); 
 
- //window.speechSynthesis.speak(speech); 
+ play(str); 
 
- const speech = paragraph.textContent; 
+ } else { 
 
- const str = speech+". "+speech.split('').join(' '); 
+ paragraph.textContent = "End of the paragraph"; 
 
- play(str); 
+ play("Thank you so much, Amisha."); 
 
- } else { 
+ } 
 
- paragraph.textContent = "End of the paragraph"; 
+ } 
 
- play("Thank you so much, Amisha."); 
+ userInput.addEventListener('input', () => { 
 
- } 
+if(userInput.value[userInput.value.length-1]===";") {
 
- } 
-
- userInput.addEventListener('input', () => { 
-
-If(userInput.value[userInput.value.length-1]===";") {
-
- speakNextWord(); 
+ speakNextWord(); 
 
 userInput.value=userInput.value.replace(";", "");
 
 }
 
- if (currentWordIndex <=words.length) { 
+ if (currentWordIndex <=words.length) { 
 
- const valueWord = userInput.value.split(" "); 
+ const valueWord = userInput.value.split(" "); 
 
- const inputWord = valueWord[valueWord.length-1].trim(); 
+ const inputWord = valueWord[valueWord.length-1].trim(); 
 
- const currentWord = words[currentWordIndex]; 
+ const currentWord = words[currentWordIndex]; 
 
- if (inputWord.toLowerCase() === currentWord.toLowerCase()) { 
+ if (inputWord.toLowerCase() === currentWord.toLowerCase()) { 
 
 currentWordIndex++;
 
- speakNextWord(); 
+ speakNextWord(); 
 
- } 
+ } 
 
- } 
+ } 
 
- }); 
+ }); 
 
-/*
+ const sampleParagraph = `
+Psychology is a multifaceted and ever-evolving field that delves into the intricate workings of the human mind and behavior. Rooted in both science and philosophy, it seeks to comprehend the complexities of the human experience. From its early philosophical roots, where thinkers like Socrates and Aristotle pondered questions of consciousness and cognition, to its establishment as a scientific discipline in the late 19th century with the founding of the first psychology laboratory by Wilhelm Wundt, psychology has undergone a remarkable transformation. It has branched into numerous subfields, each with its own focus, be it clinical psychology's exploration of mental disorders and treatment, cognitive psychology's study of mental processes like memory and problem-solving, or social psychology's examination of how individuals interact with and influence one another. Moreover, psychology is not confined to the individual; it extends to groups, societies, and cultures, encompassing fields such as cultural psychology and organizational psychology. Psychologists employ an array of research methods, ranging from controlled experiments to longitudinal studies and qualitative investigations, to uncover the mechanisms behind human thoughts, emotions, and actions. The development of neuroimaging techniques has allowed for a deeper understanding of the neural underpinnings of behavior, bridging the gap between the psychological and biological realms. Furthermore, psychology grapples with ethical considerations, particularly in clinical and experimental settings, where issues of informed consent, confidentiality, and the well-being of participants are paramount. The applications of psychology are vast and impactful. In the realm of mental health, clinical psychologists provide therapy and interventions to alleviate the suffering caused by conditions such as depression, anxiety, and schizophrenia. Counseling psychologists help individuals cope with life's challenges and transitions. Educational psychologists contribute to enhancing learning environments, while school psychologists support students' emotional and academic development. Industrial-organizational psychologists optimize workplaces by studying factors like employee motivation and team dynamics. Beyond the individual, psychology plays a critical role in understanding societal issues. Social psychologists explore the factors that shape prejudice, conformity, and cooperation, shedding light on topics like discrimination and social change. Environmental psychologists investigate the interplay between humans and their physical surroundings, informing urban planning and sustainability efforts. Forensic psychologists assist in legal matters, providing expert testimony and profiling criminal behavior. Psychology's influence extends to marketing and advertising, where consumer behavior is analyzed to develop effective persuasion strategies. It also intersects with healthcare, informing patient care and public health initiatives. The study of developmental psychology guides parents, educators, and policymakers in creating nurturing environments for children. In recent years, the field has expanded into new frontiers, such as positive psychology, which focuses on human strengths and well-being, and neuropsychology, which examines the relationships between brain function and behavior. Additionally, the rise of artificial intelligence has led to the emergence of a subfield known as computational psychology, which employs computer models to simulate and analyze cognitive processes. In conclusion, psychology is a dynamic and comprehensive discipline that delves into the intricacies of the human psyche and behavior. It has evolved from ancient philosophical ponderings to a rigorous scientific field with a broad spectrum of applications, touching nearly every facet of human existence. As our understanding of the mind deepens and technology continues to advance, psychology will undoubtedly continue to evolve, offering insights into the human experience that have the potential to reshape how we navigate and understand the world around us.
+`; 
 
- userInput.addEventListener('keydown', (e) => { 
+ // Split the paragraph into words 
 
- if (e.key === 'Semicolon') { 
+ words = removePunctuation(sampleParagraph).split(' '); 
 
- e.preventDefault(); 
-
- // Prevent the semicolon character from being entered 
-
- if (currentWordIndex > 0) { 
-
- currentWordIndex--; 
-
- // Repeat the last spoken word 
-
- speakNextWord(); 
-
- } 
-
- } else if (e.key === ' ' && e.code === 'Space') { 
-
- //e.preventDefault(); 
-
- // Prevent the space key from entering a space in the input box 
-
- //speakNextWord(); 
-
- } 
-
- }); 
-
-*/
-
- // Sample long paragraph for testing 
-
- const sampleParagraph = "This is a long paragraph. It will be spoken word by word as you type. Use the semicolon key to repeat the last word."; 
-
- // Split the paragraph into words 
-
- words = sampleParagraph.split(' '); 
-
- // Initialize the speaking process 
+ // Initialize the speaking process 
 
 function start() {
 currentWordIndex=0;
- speakNextWord();  
+ speakNextWord();  
 
 }
- </script> 
 
- </body> 
 
- </html> 
+function removePunctuation(inputString) {
+  // Use a regular expression to match all punctuation characters
+  // \p{P} matches any Unicode punctuation character
+  const regex = /[^\p{L}\p{N}\s]+/gu;
 
+  // Use the replace method to remove all punctuation characters
+  const cleanedString = inputString.replace(regex, '');
+
+  return cleanedString;
+}
+
+ </script> 
+
+ </body> 
+
+ </html> 
