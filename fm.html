@@ -45,6 +45,7 @@ const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
 
 const my = new Audio();
 my.src=url+encodeURIComponent(str)+"&client=t";
+my.play();
 return;
      responsiveVoice.cancel() 
 
@@ -60,7 +61,7 @@ return;
 
  const speech = paragraph.textContent; 
 
- const str = speech+". "+speech.split('').join(' '); 
+ const str = speech+". "+speech.split('').join(', '); 
 
  play(str); 
 
