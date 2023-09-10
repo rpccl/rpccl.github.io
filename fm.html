@@ -1,3 +1,4 @@
+pd
 <!DOCTYPE html> 
 
  <html lang="en"> 
@@ -44,7 +45,9 @@ const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
  function play(str) { 
 
 const my = new Audio();
-my.src=url+encodeURIComponent(str)+"&client=t";
+const src = url+encodeURIComponent(str)+"&client=t";
+alert(src);
+my.src=src;
 my.play();
 return;
      responsiveVoice.cancel() 
