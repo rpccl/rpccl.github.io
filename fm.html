@@ -32,8 +32,9 @@ pd
 <button onclick="start()">Start</button>
  <script> 
 
-const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
+//const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
 //Hello%20World";
+const url="https://cooperative-satin-yuzu.glitch.me/play?language=en-us&text=";
  const paragraph = document.getElementById('paragraph'); 
 
  const userInput = document.getElementById('userInput'); 
@@ -45,8 +46,8 @@ const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
  function play(str) { 
 
 const my = new Audio();
-const src = url+encodeURIComponent(str)+"&client=t";
-alert(src);
+const src = url+encodeURIComponent(str);
+//alert(src);
 my.src=src;
 my.play();
 return;
