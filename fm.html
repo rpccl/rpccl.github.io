@@ -50,7 +50,12 @@ function displayData() {
 word_count_display.innerText="Total words: "+totalWordCount;
 }
 function copy() {
-document.execCommand("copy", false, word_input.value);
+                    var range = document.createRange();
+                    range.selectNode(document.getElementById("word-input"));
+                    window.getSelection().removeAllRanges(); // clear current selection
+                    window.getSelection().addRange(range); // to select text
+                    document.execCommand("copy");
+//document.execCommand("copy", false, word_input.value);
 }
     function clearData() {
     localStorage.setItem("text", "");
