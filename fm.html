@@ -1,143 +1,65 @@
-pd
-<!DOCTYPE html> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>Word counter
+</head>
+<body>
+    <h1>Word counter</h1>
+<input type="text" id = "word-input"></input>
+<p id = "word-count"></p>
+<p id ="ch-count"></p>
 
- <html lang="en"> 
+<button onclick="copy()">Copy</button>
+<button onclick="clearData()">Clear</button>
+<script>
+const word_input = document.getElementById("word-input");
+const word_count_display = document.getElementById("word-count");
+const ch_count_display = document.getElementById("ch-count");
+const distence = 3*60*60*1000;
+//const distence = 5;
+const oldText = localStorage.getItem("text");
+if(oldText){
+const lastTypeTime = parseInt(localStorage.getItem("lastTypeTime"));
+if(lastTypeTime){
+if(Date.now()-lastTypeTime>=distence){
 
- <head> 
+clearData();
+}
+} else{
 
- <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 
- <script src="https://code.responsivevoice.org/responsivevoice.js?key=O7AWFkMo"></script> 
+    word_input.value=oldText;
 
- <title>Paragraph Dictator</title> 
-
- <style> 
-
- body { font-family: Arial, sans-serif; text-align: center; } .container { margin-top: 50px; } .paragraph { font-size: 24px; font-weight: bold; margin-bottom: 20px; } #userInput { font-size: 16px; padding: 5px 10px; }  
-
- </style> 
-
- </head> 
-
- <body> 
-
- <div class="container"> 
-
- <div class="paragraph" id="paragraph"></div> 
-
- <input type="text" id="userInput" placeholder="Start typing..."> 
-
- </div> 
-
-<button onclick="start()">Start</button>
- <script> 
-
-//const url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=en-us&q=";
-//Hello%20World";
-const url="https://cooperative-satin-yuzu.glitch.me/play?language=en-us&text=";
- const paragraph = document.getElementById('paragraph'); 
-
- const userInput = document.getElementById('userInput'); 
-
- let words = []; 
-
- let currentWordIndex = 0; 
-
- function play(str) { 
-
-const my = new Audio();
-const src = url+encodeURIComponent(str);
-//alert(src);
-my.src=src;
-my.play();
-return;
-     responsiveVoice.cancel() 
-
- responsiveVoice.speak(str, "UK English Male"); 
-
- } 
-
- function speakNextWord() { 
-
- if (currentWordIndex < words.length) { 
-
- paragraph.textContent = words[currentWordIndex]; 
-
- const speech = paragraph.textContent; 
-
- const str = speech+". "+speech.split('').join(', '); 
-
- play(str); 
-
- } else { 
-
- paragraph.textContent = "End of the paragraph"; 
-
- play("Thank you so much, Amisha."); 
-
- } 
-
- } 
-
- userInput.addEventListener('input', () => { 
-
-if(userInput.value[userInput.value.length-1]===";") {
-
- speakNextWord(); 
-
-userInput.value=userInput.value.replace(";", "");
-
+displayData();
+}
 }
 
- if (currentWordIndex <=words.length) { 
+word_input.addEventListener("input", function(e) {
 
- const valueWord = userInput.value.split(" "); 
+    displayData();
 
- const inputWord = valueWord[valueWord.length-1].trim(); 
+    localStorage.setItem("text", word_input.value);
 
- const currentWord = words[currentWordIndex]; 
-
- if (inputWord.toLowerCase() === currentWord.toLowerCase()) { 
-
-currentWordIndex++;
-
- speakNextWord(); 
-
- } 
-
- } 
-
- }); 
-
- const sampleParagraph = `Psychology is a multifaceted and ever-evolving field that delves into the intricate workings of the human mind and behavior. Rooted in both science and philosophy, it seeks to comprehend the complexities of the human experience. From its early philosophical roots, where thinkers like Socrates and Aristotle pondered questions of consciousness and cognition, to its establishment as a scientific discipline in the late 19th century with the founding of the first psychology laboratory by Wilhelm Wundt, psychology has undergone a remarkable transformation. It has branched into numerous subfields, each with its own focus, be it clinical psychology's exploration of mental disorders and treatment, cognitive psychology's study of mental processes like memory and problem-solving, or social psychology's examination of how individuals interact with and influence one another. Moreover, psychology is not confined to the individual; it extends to groups, societies, and cultures, encompassing fields such as cultural psychology and organizational psychology. Psychologists employ an array of research methods, ranging from controlled experiments to longitudinal studies and qualitative investigations, to uncover the mechanisms behind human thoughts, emotions, and actions. The development of neuroimaging techniques has allowed for a deeper understanding of the neural underpinnings of behavior, bridging the gap between the psychological and biological realms. Furthermore, psychology grapples with ethical considerations, particularly in clinical and experimental settings, where issues of informed consent, confidentiality, and the well-being of participants are paramount. The applications of psychology are vast and impactful. In the realm of mental health, clinical psychologists provide therapy and interventions to alleviate the suffering caused by conditions such as depression, anxiety, and schizophrenia. Counseling psychologists help individuals cope with life's challenges and transitions. Educational psychologists contribute to enhancing learning environments, while school psychologists support students' emotional and academic development. Industrial-organizational psychologists optimize workplaces by studying factors like employee motivation and team dynamics. Beyond the individual, psychology plays a critical role in understanding societal issues. Social psychologists explore the factors that shape prejudice, conformity, and cooperation, shedding light on topics like discrimination and social change. Environmental psychologists investigate the interplay between humans and their physical surroundings, informing urban planning and sustainability efforts. Forensic psychologists assist in legal matters, providing expert testimony and profiling criminal behavior. Psychology's influence extends to marketing and advertising, where consumer behavior is analyzed to develop effective persuasion strategies. It also intersects with healthcare, informing patient care and public health initiatives. The study of developmental psychology guides parents, educators, and policymakers in creating nurturing environments for children. In recent years, the field has expanded into new frontiers, such as positive psychology, which focuses on human strengths and well-being, and neuropsychology, which examines the relationships between brain function and behavior. Additionally, the rise of artificial intelligence has led to the emergence of a subfield known as computational psychology, which employs computer models to simulate and analyze cognitive processes. In conclusion, psychology is a dynamic and comprehensive discipline that delves into the intricacies of the human psyche and behavior. It has evolved from ancient philosophical ponderings to a rigorous scientific field with a broad spectrum of applications, touching nearly every facet of human existence. As our understanding of the mind deepens and technology continues to advance, psychology will undoubtedly continue to evolve, offering insights into the human experience that have the potential to reshape how we navigate and understand the world around us.`; 
-
- // Split the paragraph into words 
-
- words = removePunctuation(sampleParagraph).split(' '); 
-
- // Initialize the speaking process 
-
-function start() {
-currentWordIndex=0;
- speakNextWord();  
-
+localStorage.setItem("lastTypedTime", Date.now().toString());
+});
+function displayData() {
+    const totalWordCount = word_input.value.split(/\s/g).length;
+    ch_count_display.innerText="Total characters: "+word_input.value.length;
+word_count_display.innerText="Total words: "+totalWordCount;
 }
-
-
-function removePunctuation(inputString) {
-//return inputString;
-  // Use a regular expression to match all punctuation characters
-  // \p{P} matches any Unicode punctuation character
-  const regex = /[^\p{L}\p{N}\s]+/gu;
-
-  // Use the replace method to remove all punctuation characters
-  const cleanedString = inputString.replace(regex, '');
-
-  return cleanedString;
+function copy() {
+document.execCommand("copy", false, word_input.value);
 }
+    function clearData() {
+    localStorage.setItem("text", "");
+    word_input.value = "";
 
- </script> 
+    displayData();
+localStorage.setItem("lastTypedTime", "0");
+}
+        </script>
 
- </body> 
-
- </html> 
+</body>
+</html>
