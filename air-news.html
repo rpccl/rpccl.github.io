@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="HandheldFriendly" content="true">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=no">
+<!--<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>
+-->
+<script src ="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<style type="text/css">
+html, body {
+padding: 0; margin: 0; width: 100%; height: 100%; font-family: Arial;background-color: #191970;}
+
+#dre, #trn {
+    height: 3vh;     width: 40vw;          background-color: #000;color: #fff;	font-size: 5px;text-align: center; margin: auto;     display: flex;    justify-content: center;    align-items: center; }
+#trn {
+font-size: 4px;}
+.loader {
+  border: 12px solid #fff;  border-radius: 50%;  border-top: 12px solid #3498db;  width: 120px;  height: 120px;  -webkit-animation: spin 2s linear infinite; /* Safari */  animation: spin 2s linear infinite;}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }  100% { -webkit-transform: rotate(320deg); }}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }  100% { transform: rotate(320deg); }}
+#ldm, #try {
+display:none; margin: auto;position: fixed;     top: 32%;    opacity: 1; width: 95%;  height: auto;  }
+
+.dlb {
+	width: 14vw;height: 3vh;	border: 1px solid #fff;border-radius: 10px;	font-size: 8px;	margin: auto;	background-color: #550000;color: #fff;text-align: center;    display: flex;    justify-content: center;    align-items: center;}
+.container2 {
+border:4px dotted blue;    border-radius: 30px;    background-color: red;color: #fff;    padding: 20px;text-align:center;display:none;}
+#st, #hdr, b {
+color:White;}
+
+#alt {
+    height: 40px;     position: fixed;     bottom:5%;    width:100%;     background-color: #000;     opacity: 1;color: #fff;	font-size: 10px;text-align: center;}
+.tb {
+	width: 90%;height: 30px;	border: 1px solid #fff;border-radius: 10px;	font-size: 15px;	margin: auto;	background-color: #000;color: #fff;text-align: left;    display: flex;    justify-content: center;    align-items: left;}
+.s {
+	width: 70%;height: 40px;	border: 2px solid #fff;border-radius: 0px; font-size: 16px;	margin: auto;	background-color: #000;color: #fff;text-align: center;    display: flex;    justify-content: center;    align-items: center;}
+.btn {
+   background-color: #550000;border-radius: 50px;font-size: 0px;   height:50px;   width:50px;   cursor:pointer;}
+.fa, .fas {
+color: #fff;font-size: 16px;
+}
+.pp {
+color: red; font-size: 20px; }
+#buttons{
+display:block;}
+#cpb, #lng, #player, #hd, #allb{
+display:none;}
+#lngbox{
+position: fixed;     bottom:0%;    opacity: 0; width: 0%;height: 0%; font-size: 0px; }
+#cpb {
+margin-top: 1%; margin-left: 4%; float:  left; height: auto;     width: auto;          display: block; }
+#lng {
+margin-top: 1%; margin-right: 4%; float: right; height: auto;     width: auto;          display: block; }
+#thm {
+  font-weight: bold; text-align: center; height: 35px;width: 35px; font-size: 25px; outline: none;  padding: 0px;  background-color: #191970; color: red;  cursor: pointer;border: none; }
+</style>
+<title id="ttl">Audio news podcasts</title>
+</head>
+
+<body>
+
+<div id="hd"></div>
+
+<br><br>
+
+
+
+<div class="container2" id="inter">
+<div id="st" aria-live="assertive">You los internet connection!</div>
+<b>Pleas Try:</b>
+<ul>
+<li>Turning on mobile data or WiFi.</li>
+
+<li>Checking the signal in your area.</li>
+
+<li>Turning off airplane mode.</li>
+<li>Turning off power saving mode.</li>
+</ul>
+
+
+
+ </div>
+<div id="page">
+<div align = "center">
+<div id="buttons" ><b aria-live="polite">Select program:</b><br></div>
+</div>
+<div id="cpb" align="center">
+<div role="button" aria-label="Change program" title="Back to program list" onclick="shoList()"><i class="fa fa-close" style="font-size:35px;color:red"></i></div>
+</div>
+<div id="lng" align="center">
+<div role="button" id="thm" aria-label="Change language" title="change regional language" onclick="runThis()">L</div>
+</div>
+<select aria-hidden=true id="lngbox" onchange="handalLng()"><option value="-1" selected disabled>select language:</option></select>
+
+<div id="player" align = "center">
+<div id="md">
+<audio onplaying="b()" id="aud" src=""></audio>
+</div>
+<div id="cnt">
+
+<header id="hdr"></header>
+<p aria-live="polite" id="trn"></p>
+
+<p id="dre"></p>
+<br>
+<button class="btn" id="pb" onclick="prs()">Previous<i class="fa fa-fast-backward"></i></button>
+<button class="btn" id="rb" onclick="pl.currentTime-=30; alt('Rewinded: 30 seconds')">Rewind<i class="fa fa-backward"></i></button>
+<button class="btn" id="ppb" onclick="playpause()">Play<i aria-hidden=true class="pp fa fa-play"></i></button>
+<button class="btn" id="fb" onclick="pl.currentTime+=30; alt('Forwarded: 30 seconds')">Forward<i class="fa fa-forward"></i></button>
+<button class="btn" id="nb" onclick="nxt()">Next<i class="fa fa-fast-forward"></i></button>
+</div>
+<div align = "center">
+<button class="btn" aria-label="Decrease playback speed(.25)" onclick=spd(0)><i class="fas fa-minus"></i></button>
+<button class="btn" aria-label="Reset playback speed" onclick=spd(1)><i class='fas fa-equals'></i></button>
+
+<button class="btn" aria-label="Increse playback speed(.25)" onclick=spd(2)><i class='fas fa-plus'></i></button>
+</div>
+
+<B>Tracks:</b>
+<div id="allb">
+</div>
+
+
+</div>
+<div id="ldm" align = "center">
+<div class="loader"></div>
+<br><br>
+<b aria-live="polite">Loading, please wait for few seconds.</b>
+</div>
+<div id="alt" aria-live="assertive" style ="display:none" align = "center">
+<p id="cpy"></p>
+</div>
+<script>
+
+var shos=[
+{name:"BBC Gujarati, Din vishesh",discription:"bbc",type:"audio",id:"PLGTyS60Ejq8RW-L6wLzNNuwnxxjJjJdw3",limit:49,ids:[],errors:[],tracks:[]},
+{name:"BBC Hindi,Din bhar",discription:"bbc",type:"audio",id:"PLe6HIkLyF3PhHFWi-LtmaNo0eHZiUfGUu",limit:49,ids:[],errors:[],tracks:[]},
+{name:"BBC Hindi, India bole",discription:"bbc",type:"audio",id:"PLe6HIkLyF3PirXIGQGdkX9asuhRQDY8KN",limit:0,ids:[],errors:[],tracks:[]},
+{name:"BBC Hindi, BBC duniya",discription:"bbc",type:"audio",id:"PLYxuvEJLss6AOum3mP1NQlVFvzXXp7Nec",limit:49,ids:[],errors:[],tracks:[]},
+{name:"BBC Hindi, Duniya jahaan",discription:"bbc",type:"audio",id:"PLYxuvEJLss6Cy_QX2c8WBV0lKI4koKzrP",limit:49,ids:[],errors:[],tracks:[]},
+{name:"BBC Hindi, Vivechna",discription:"bbc",type:"audio",id:"PLYxuvEJLss6CFZArcdnvYPr0te_VFqZQc",limit:49,ids:[],errors:[],tracks:[]},
+{name:"DD Hindi, express",discription:"bbc",type:"audio",id:"PLxx0m3vtiqMZBJsl_-7doiD6XLUEf7YmC",limit:49,ids:[],errors:[],tracks:[]},
+{name:"All India radio news",url:"http://newsonair.gov.in/",discription:"bbc",type:"audio",id:"PLYxuvEJLss6AOum3mP1NQlVFvzXXp7Nec",limit:0,ids:[],errors:[],tracks:[]},
+{name:"All India radio regional news",url:"https://newsonair.gov.in/Regional_Audio_rss.aspx", discription:"bbc",type:"audio",id:"",limit:0,ids:[],errors:[],tracks:[]},
+{name:"NDTV, Prime time with ravish",url:"http://www.radioindia.in/podcasts/prime-time-with-ravish",discription:"ndtv",type:"audio",id:"PLYxuvEJLss6AOum3mP1NQlVFvzXXp7Nec",limit:0,ids:[],errors:[],tracks:[]}];
+var allAuthars=[];
+var authors=[];
+var sho=shos[0];
+
+var core = "https://api.codetabs.com/v1/proxy?quest=";
+var endPoint = core+'https://qdownloader.io/download?url=https://www.youtube.com/watch?v=';
+
+var pid=sho.id;
+
+var ids = sho["ids"];
+var errors=sho.errors;
+var npt = "Now Playing. ";
+var cn=" track ";
+var cs="Current "+cn+": ";
+var tl = sho.tracks;
+var cr=0;
+var mity="audio";
+
+var title=sho.name;
+var dealay =19;
+var currentIndex;
+
+var pl=document.getElementById('aud');
+var hidden = document.getElementById("hd");
+pl.onend=function(e){nxt()}
+function printShos() {
+
+for(var w=0;w<shos.length;w++){
+document.getElementById("buttons").innerHTML+="<button class='s' id='i"+w+"' onclick='handalSho("+w+")'>"+shos[w].name+"</button>";
+}
+shoList();
+}
+
+function shoList() {
+pl.pause();
+document.getElementById('ppb').innerHTML="Play<i aria-hidden=true class='pp fa fa-play'></i>";
+document.getElementById('ttl').innerHTML="Audio news podcast";
+sh("player", "none");
+sh("cpb", "none");
+sh("lng", "none");
+sh("buttons", "block");
+}
+function highdList() {
+pl.play();
+document.getElementById('ppb').innerHTML="Pause<i aria-hidden=true class='pp fa fa-pause'></i>";
+sh("player", "block");
+sh("cpb", "none");
+sh("buttons", "none");
+if(sho.id===""){
+sh("lng", "block");
+}
+}
+function handalSho(index) {
+
+sh("buttons", "none");
+if(index=="-1"){
+alt("Please, select program.");
+return;
+}
+if(index===currentIndex){
+highdList();
+return;
+}
+currentIndex=index;
+sho=shos[index];
+pid=sho.id;
+
+ids = sho["ids"];
+errors=sho.errors;
+tl = sho.tracks;
+title= sho.name;
+cr=0;
+document.getElementById("hdr").innerHTML=sho.name;
+document.getElementById("allb").innerHTML="";
+document.getElementById('pb').disabled=false;
+document.getElementById('nb').disabled=false;
+if((index==1)||(index==2)){
+dealay=19;
+} else{
+dealay=0;
+}
+pl.pause(true);
+document.getElementById('ppb').innerHTML="Play<i aria-hidden=true class='pp fa fa-play'></i>";
+if(index==shos.length-1){
+bbc(sho.url);
+return;
+}
+if(index==shos.length-2){
+document.getElementById('pb').disabled=true;
+document.getElementById('nb').disabled=true;
+rnu(sho.url);
+return;
+}
+if(index==shos.length-3){
+air(sho.url);
+return;
+}
+if(index==shos.length-4){
+bbc(sho.url);
+return;
+}
+if(tl.length===0){
+
+document.title="BBC: "+sho.name+" loading.";
+
+start();
+} else{
+switchSho();
+}
+
+}
+
+function rnu(url) {
+if(tl.length===0){
+rhighdAll();
+//alert(url);
+$.get({url:"https://cors-anywhere.herokuapp.com/"+url,datatype:"aplication/xml+rss", success:function(xml) {
+
+
+var domParser = new DOMParser();
+let doc = domParser.parseFromString(xml, 'text/xml');
+
+var list = doc.getElementsByTagName("item");
+
+
+for(var li=0;li<list.length;li++){
+var ll=list[li];
+var ttl = ll.getElementsByTagName("title")[0].textContent;
+
+
+var authar = ll.getElementsByTagName("author")[0].textContent;
+var src = ll.getElementsByTagName("link")[0].textContent;
+tl.push({name:ttl,path:src,authar:authar});
+allAuthars.push(authar);
+
+}
+
+authars = allAuthars.filter(function(item, index, self) {
+return self.indexOf(item)===index;
+});
+authars.sort();
+for(var o=0;o<authars.length;o++){
+document.getElementById("lngbox").innerHTML+="<option value='"+authars[o]+"'>"+authars[o]+"</option>";
+}
+
+
+switchSho(false);
+}});
+} else{
+switchSho(false);
+
+}
+
+}
+function shoButton() {
+document.getElementById('lngbox').options[0].selected=true;
+setTimeout(function(){
+runThis();
+}, 1000);
+sh("cpb", "block");
+sh("lng", "block");
+alt(sho.name+" is ready.");
+}
+function handalLng() {
+var l = document.getElementById("lngbox").value;
+var btns = document.getElementsByClassName('tb');
+for(var h=0;h<btns.length;h++){
+btns[h].style.display="none";
+}
+var btns1 = document.getElementsByClassName(l);
+for(var h1=0;h1<btns1.length;h1++){
+btns1[h1].style.display="block";
+}
+btns1[0].click();
+}
+function air(url) {
+if(tl.length===0){
+rhighdAll();
+$.get(core+url,function(r) {
+
+hidden.innerHTML=r;
+var list = document.getElementsByTagName("audio");
+
+for(var li=0;li<list.length;li++){
+var ll=list[li];
+var ttl = ll.previousSibling.innerText;
+
+
+if(ttl===undefined){
+var ttl="";
+let src = ll.src.replace("https://newsonair.gov.in/writereaddata/Bulletins_Audio/", "");
+
+let ar=src.split("");
+for(let j=ar.length-1;j>=0;j--){
+if(ar[j]!=="-"){
+ar.pop();
+} else{
+ar.pop();
+break;
+}
+}
+let part = ar.join("");
+let ay= part.split("/");
+for(let k=2;k<ay.length;k++){
+ttl+=ay[k];
+}
+}
+ttl = ttl.replace("newsonair.gov.inwritereaddataBroadcastDaily2020", "");
+tl.push({name:ttl,path:ll.src});
+}
+switchSho();
+});
+} else{
+switchSho();
+
+}
+
+}
+function bbc(url) {
+if(tl.length===0){
+rhighdAll();
+$.get(core+url,function(r) {
+
+hidden.innerHTML=r;
+var list = document.getElementsByClassName("podcast-item");
+//alert(list.length);
+for(var li=0;li<list.length;li++){
+var ll=list[li];
+var ttl = ll.getElementsByClassName("mdc-list-item__text")[0].innerText;
+var lt = ll.getElementsByTagName("svg")[0].dataset.url;
+if(li==0){
+//alert(ttl+lt);
+}
+tl.push({name:ttl,path:lt});
+}
+switchSho();
+});
+} else{
+switchSho();
+
+}
+}
+function switchSho(move=true) {
+
+document.title=title;
+
+
+
+for(d=0;d<tl.length;d++){
+let cls = "tb ";
+if(tl[d].authar!==undefined){
+cls+=tl[d].authar;
+}
+document.getElementById("allb").innerHTML+="<div style='display:block'  class='"+cls+"' id='t"+d+"' onclick='htr("+d+")'>"+tl[d].name+"</div>";
+}
+if(move===true){
+alt(sho.name+" is ready!");
+
+
+playSho();
+} else{
+
+shoButton();
+
+}
+
+}
+
+function playSho() {
+pl.pause();
+var path = isPath(cr);
+
+if(path===false){
+loadTrack(tl[cr].id);
+
+} else{
+updatePlayer(path);
+}
+}
+function updatePlayer(link) {
+sh("ldm", "none");
+sh("cpb", "block");
+
+sh("player", "block");
+sh("allb", "block");
+
+
+pl.src=link;
+
+
+document.getElementById("trn").innerHTML=cs+tl[cr].name;
+playpause();
+
+spd();
+var path = isPath(cr);
+if(path===false){
+tl[cr].path=link;
+}
+pl.currentTime=dealay;
+}
+function isPath(num) {
+var TrackPath=tl[num].path;
+if(TrackPath===undefined){
+return false;
+}
+return TrackPath;
+}
+function htr(n) {
+cr=n;
+
+playSho();
+}
+function playpause(silence=false) {
+if(pl.paused==true){
+pl.play();
+sh("dre", "block");
+
+if(silence===false){
+
+alt(npt+tl[cr].name);
+}
+} else{
+pl.pause();
+document.getElementById('ppb').innerHTML="Play<i aria-hidden=true class='pp fa fa-play'></i>";
+if(silence===false){
+alt('Paused');
+}
+}
+
+}
+function b() {
+document.getElementById('ppb').innerHTML="pause<i aria-hidden=true class='pp fa fa-pause'></i>";
+}
+function nxt() {
+if(cr==tl.length-1){
+cr=0;
+}else{
+cr++;
+}
+playSho();
+
+
+}
+function prs() {
+if(cr==0){
+cr=tl.length-1;
+}else{
+cr--;
+}
+playSho();
+
+
+}
+</script>
+<script>
+function alt(msg) {   
+
+sh("alt", "block");
+document.getElementById("cpy").innerHTML = msg;
+setTimeout(function(){
+sh("alt", "none");
+
+}, 1000);
+}
+function sh(elem, state) {
+if(document.getElementById(elem)==null){
+alert(elem); }
+else {
+document.getElementById(elem).style.display=state;
+}
+}
+
+            function updateOnlineStatus() {
+/*if(tl.length===0){
+
+start();
+}*/
+
+sh("inter", "none");
+sh("page", "block");
+            }
+
+            function updateOfflineStatus() {
+sh("page", "none");
+sh("inter", "block");
+            }
+
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOfflineStatus); 
+
+
+    function checkConnection() {
+        if(navigator.onLine) {
+updateOnlineStatus();
+
+
+
+
+printShos();
+        } else {
+updateOfflineStatus();
+
+
+        }
+
+    }
+pl.addEventListener('timeupdate', function(e) {
+
+ document.getElementById("dre").innerHTML="Elapsed time: "+ sToTime(e.target.currentTime)+ " / " + sToTime(e.target.duration);
+})
+
+function sToTime(t) {
+if(isNaN(t)===true){
+return "?";
+}
+  return padZero(parseInt((t / (60)) % 60)) + ":" +
+         padZero(parseInt((t) % 60));
+}
+function padZero(v) {
+  return (v < 10) ? "0" + v : v;
+}
+
+
+
+function rhighdAll() {
+sh("ldm", "block");
+sh("cpb", "none");
+
+sh("player", "none");
+sh("allb", "none");
+
+}
+function loadTrack(id) {
+
+
+rhighdAll();
+
+var url = endPoint+id;
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+
+
+
+
+
+
+
+let doc = html(this.response);
+let table = doc.getElementsByTagName("table")[0];
+
+
+
+
+
+let linkTags = table.getElementsByTagName("a");
+let linkTag = linkTags[linkTags.length-1];
+updatePlayer(linkTag.href);
+    }
+  };
+  xhttp.open("GET", url, true);
+  xhttp.send();
+
+}
+
+
+</script>
+
+
+
+
+<script>
+
+
+
+function start(){
+
+sh("ldm", "block");
+sh("cpb", "none");
+sh("player", "none");
+sh("allb", "none");
+
+
+
+    getVids();
+}
+function getVids(PageToken){
+
+$.get(
+{url:    "https://www.googleapis.com/youtube/v3/playlistItems", data:{
+    part : 'snippet', 
+    maxResults : 50,
+    playlistId : pid,
+    pageToken : PageToken,
+    key: 'AIzaSyDf_M52jNY8k_HZzSyqN6dL8eAHE6pFH0c'
+    },
+    success:function(data){
+
+
+          myPlan(data);
+    }        ,
+error:function(e) {
+alert(e);
+}
+}    );  
+}
+
+
+ function myPlan(data){
+  nextPageToken=data.nextPageToken;
+  pageLen = data.items.length;
+
+  for(i=0; i<pageLen; i++){
+
+var vid=data.items[i].snippet.resourceId.videoId;
+var vt=data.items[i].snippet.title;
+
+if(vt.includes("Private video")){
+continue;
+}
+if(vt.includes("Deleted video")){
+continue;
+}
+tl.push({id:vid,name:vt});
+  }
+
+
+if(sho.limit!==0){
+
+if(tl.length>sho.limit){
+switchSho();
+return;
+}
+}
+   if(typeof nextPageToken == 'undefined'){
+          total = data.pageInfo.totalResults;
+
+
+
+
+switchSho();
+
+
+          return;      
+
+      }else{
+          getVids(nextPageToken);
+      }
+ }
+function spd(n=3) {
+
+
+switch(n){
+case 1:
+spead = 1;
+break;
+case 0:
+if(spead>.25){
+spead-=.25;
+}
+break;
+case 2:
+if(spead<4){
+spead+=.25;
+}
+break;
+default:
+spead=spead;
+break;
+}
+pl.playbackRate=spead;
+}
+var sl = document.getElementById("slt");
+var spead = pl.playbackRate;
+function showDropdown(element) {
+  var event;
+  event = document.createEvent('MouseEvents');
+  event.initMouseEvent('mousedown', true, true, window);
+  element.dispatchEvent(event);
+};
+
+function runThis() {
+  var dropdown = document.getElementById('lngbox');
+
+  showDropdown(dropdown);
+
+}
+function html(string, stringType="html") {
+const domParser = new DOMParser();
+if(stringType==="html"){
+return domParser.parseFromString(string, 'text/html');
+}
+return domParser.parseFromString(string, 'text/xml');
+}
+checkConnection();
+handalSho(shos.length-3);
+</script>
+</body>
+</html>
