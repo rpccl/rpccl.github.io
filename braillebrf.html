@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>brf creater</title>
+</head>
+<body>
+    <h1>Create Brf!</h1>
+
+    <textarea id="textInput" rows="4" cols="50" placeholder="Enter text here..."></textarea><br>
+    <input type="file" id="fileInput" accept=".txt"><br>
+    <button onclick="convertBrf()">Convert to BRF</button>
+
+    <h2>BRF Output:</h2>
+    <p id="brfOutput"></p>
+    <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
+
+<script>
+const brailleMap = {
+"020":" ",
+    "a81": "'",
+    "a82": ";",
+    "a83": ",",
+    "a85": "a",
+    "a86": ">",
+    "a87": "i",
+    "a88": "9",
+    "a89": "u",
+    "a8a": "|",
+    "a8b": "\"r",
+    "a8c": "\"r",
+    "a8d": "5",
+    "a8f": "e",
+    "a90": "/",
+    "a91": "x",
+    "a93": "o",
+    "a94": "{",
+    "a95": "k",
+    "a96": ".",
+    "a97": "g",
+    "a98": "<",
+    "a99": "+",
+    "a9a": "c",
+    "a9b": "*",
+    "a9c": "j",
+    "a9d": "0",
+    "a9e": "3",
+    "a9f": ")",
+    "aa0": "w",
+    "aa1": "$",
+    "aa2": "=",
+    "aa3": "#",
+    "aa4": "t",
+    "aa5": "?",
+    "aa6": "d",
+    "aa7": "!",
+    "aa8": "n",
+    "aaa": "p",
+    "aab": "6",
+    "aac": "b",
+    "aad": "~",
+    "aae": "m",
+    "aaf": "y",
+    "ab0": "r",
+    "ab2": "l",
+    "ab3": "_",
+    "ab5": "v",
+    "ab6": "%",
+    "ab7": "&",
+    "ab8": "s",
+    "ab9": "h",
+    "abc": "",
+    "abe": ">",
+    "abf": "i",
+    "ac0": "9",
+    "ac1": "u",
+    "ac2": "|",
+    "ac3": "\"r",
+    "ac4": "\"r",
+    "ac5": "5",
+    "ac7": "e",
+    "ac8": "/",
+    "ac9": "x",
+    "acb": "o",
+    "acc": "{",
+    "acd": "`",
+    "ae6": "#j",
+    "ae7": "#a",
+    "ae8": "#b",
+    "ae9": "#c",
+    "aea": "#d",
+    "aeb": "#e",
+    "aec": "#f",
+    "aed": "#g",
+    "aee": "#h",
+    "aef": "#i"
+}
+
+function convertTextToBrf(inputString) {
+    let brailleText = "";
+    for (let i = 0; i < inputString.length; i++) {
+        let character = inputString[i];
+        let codePoint = character === ' ' ? '020' : character.codePointAt(0).toString(16);
+        brailleText += brailleMap[codePoint] || '';
+    }
+//alert(brailleText);
+    for (let j = 0; j < brailleText.length; j++) {
+if(brailleText[j]==="`") {
+brailleText=swapWithPreviousInString(brailleText, j);
+}
+}
+    return brailleText;
+}
+
+function convertBrf() {
+    const textInput = document.getElementById('textInput').value;
+    const brfOutput = convertTextToBrf(textInput);
+    document.getElementById('brfOutput').innerText = brfOutput;
+    
+    const blob = new Blob([brfOutput], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = url;
+    downloadLink.style.display = 'inline';
+}
+
+document.getElementById('fileInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            document.getElementById('textInput').value = text;
+        };
+        reader.readAsText(file);
+    }
+});
+// Function to swap a character with its previous character in a string
+function swapWithPreviousInString(str, index) {
+    // Convert string to array of characters
+    let arr = str.split('');
+    
+    // Check if the index is valid (it should not be the first character)
+    if (index > 0 && index < arr.length) {
+        // Temporary variable to hold the value of the character
+        let temp = arr[index];
+        // Swap the characters
+        arr[index] = arr[index - 1];
+        arr[index - 1] = temp;
+    } else {
+//        console.log('Invalid index provided');
+        return str; // Return original string if index is invalid
+    }
+    
+    // Convert array of characters back to string
+    return arr.join('');
+}
+
+// Example usage
+//let myString = "hello";
+//console.log('Before swap:', myString);
+
+//myString = swapWithPreviousInString(myString, 2); // Swapping character at index 2 with the previous character
+
+//console.log('After swap:', myString);
+</script>
+</body>
+</html>
