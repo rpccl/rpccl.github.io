@@ -8,15 +8,15 @@
 <body>
     <h1>Create Brf!</h1>
 
-    <textarea id="textInput" rows="4" cols="50" placeholder="Enter text here..."></textarea><br>
+    <textarea style="display:none;" id="textInput" rows="40" cols="50" placeholder="Enter text here..."></textarea><br>
     <input type="file" id="fileInput" accept=".txt"><br>
     <button onclick="convertBrf()">Convert to BRF</button>
 
-    <h2>BRF Output:</h2>
-    <p id="brfOutput"></p>
+<p id="brfOutput"></p>
     <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
 
-<script>
+<h2>V 0.1 Aded capebility to prosses largefiles.</h2>
+ <script>
 const brailleMap = {
 "020":" ",
     "a81": "'",
@@ -96,6 +96,111 @@ const brailleMap = {
     "aee": "#h",
     "aef": "#i"
 }
+// Helper function to read file in chunks using a Promise
+function readFileInChunks(file, chunkSize = 1024 * 1024) { // default 1MB chunk size
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        let currentChunk = 0;
+        let fileText = '';
+
+        reader.onload = function (e) {
+            fileText += e.target.result;
+            currentChunk++;
+
+            if (currentChunk < totalChunks) {
+                readNextChunk();
+            } else {
+                resolve(fileText); // Resolve with the entire file content
+            }
+        };
+
+        reader.onerror = function (err) {
+            reject(err);
+        };
+
+        function readNextChunk() {
+            const start = currentChunk * chunkSize;
+            const end = Math.min(file.size, start + chunkSize);
+            const blob = file.slice(start, end);
+            reader.readAsText(blob);
+        }
+
+        readNextChunk(); // Start reading the first chunk
+    });
+}
+
+// Convert text to BRF using Promises
+function convertTextToBrf(inputString) {
+    return new Promise((resolve, reject) => {
+        try {
+            let brailleTextArray = [];
+
+            // Build braille text
+            for (let i = 0; i < inputString.length; i++) {
+                let character = inputString[i];
+                let codePoint = character === ' ' ? '020' : character.codePointAt(0).toString(16);
+                brailleTextArray.push(brailleMap[codePoint] || '');
+            }
+
+            // Join array into a string
+            let brailleText = brailleTextArray.join('');
+
+            // Perform swapping asynchronously if needed
+            let swappedTextArray = brailleText.split('');
+            for (let j = 1; j < swappedTextArray.length; j++) {
+                if (swappedTextArray[j] === '`') {
+                    // Swap current with the previous character
+                    [swappedTextArray[j - 1], swappedTextArray[j]] = [swappedTextArray[j], swappedTextArray[j - 1]];
+                }
+            }
+
+            // Convert back to a string and resolve the promise
+            resolve(swappedTextArray.join(''));
+
+        } catch (error) {
+            reject(error); // Reject the promise in case of errors
+        }
+    });
+}
+
+// Main function to handle file reading and BRF conversion using async/await
+async function convertBrf() {
+    const file = document.getElementById('fileInput').files[0]; // Get the selected file
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+
+    try {
+        // Read the file in chunks
+        const textInput = await readFileInChunks(file);
+
+        // Wait for the BRF conversion to complete
+        const brfOutput = await convertTextToBrf(textInput);
+
+        // Output and provide the download link
+        document.getElementById('brfOutput').innerText = "Your BRF is done. Please, download it by clicking on the download link.";
+        
+        const blob = new Blob([brfOutput], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = url;
+        downloadLink.style.display = 'inline';
+
+    } catch (error) {
+        console.error('Error during conversion:', error);
+        alert('An error occurred while converting the text to BRF.');
+    }
+}
+
+// Event listener for file input to trigger the BRF conversion
+document.getElementById('fileInput').addEventListener('change', function () {
+    convertBrf();
+});
+
+/*
+Old v1
 
 function convertTextToBrf(inputString) {
     let brailleText = "";
@@ -116,7 +221,7 @@ brailleText=swapWithPreviousInString(brailleText, j);
 function convertBrf() {
     const textInput = document.getElementById('textInput').value;
     const brfOutput = convertTextToBrf(textInput);
-    document.getElementById('brfOutput').innerText = brfOutput;
+    document.getElementById('brfOutput').innerText = "Your Brf is done. Please, download it by clicking on Download link.";
     
     const blob = new Blob([brfOutput], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -132,7 +237,8 @@ document.getElementById('fileInput').addEventListener('change', function() {
         reader.onload = function(e) {
             const text = e.target.result;
             document.getElementById('textInput').value = text;
-        };
+        alert("Parsing is done.");
+    }
         reader.readAsText(file);
     }
 });
@@ -164,6 +270,7 @@ function swapWithPreviousInString(str, index) {
 //myString = swapWithPreviousInString(myString, 2); // Swapping character at index 2 with the previous character
 
 //console.log('After swap:', myString);
+*/
 </script>
 </body>
 </html>
