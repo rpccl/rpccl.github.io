@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +16,9 @@
 <p id="brfOutput"></p>
     <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
 
-<h2>V 0.2 Ad support for english chars and all Gujarati and English Symballs..</h2>
+<h2>V 0.1 Aded capebility to prosses largefiles.</h2>
  <script>
+<<<<<<< HEAD
 
 const brailleMap = {
     "020": " ",    // Space (ASCII)
@@ -195,6 +197,8 @@ const brailleMap = {
 };
 
 /*
+=======
+>>>>>>> aca533050a3aab864c7e12145ef44e27dbaf67e5
 const brailleMap = {
 "020":" ",
     "a81": "'",
@@ -274,7 +278,6 @@ const brailleMap = {
     "aee": "#h",
     "aef": "#i"
 }
-*/
 // Helper function to read file in chunks using a Promise
 function readFileInChunks(file, chunkSize = 1024 * 1024) { // default 1MB chunk size
     return new Promise((resolve, reject) => {
@@ -320,8 +323,7 @@ function convertTextToBrf(inputString) {
                 let character = inputString[i];
                 let codePoint = character === ' ' ? '020' : character.codePointAt(0).toString(16);
                 brailleTextArray.push(brailleMap[codePoint] || '');
-            //alert(codePoint )
-}
+            }
 
             // Join array into a string
             let brailleText = brailleTextArray.join('');
@@ -450,18 +452,6 @@ function swapWithPreviousInString(str, index) {
 //myString = swapWithPreviousInString(myString, 2); // Swapping character at index 2 with the previous character
 
 //console.log('After swap:', myString);
-*/
-/*
-Todos
-1. FixeMultiple numbers and remove a nosign if continuas numbers are detacted.
-2. Add dubbele Capetle sign if whole word is capitle.
-3. Make shure that all Gujarati and English Pantuations are conwerted proparly.
-4. Add Option to type text directoly, make changes in selected file and add option to rename downloaded file.
-
-add option to define a pagelength and line length like dbt.
-5. Refacter code to avoid Technicle debt. Remove unnessory Stringbuild and do everithing ijn a 1 arrayy. 
-6 Get a domain and published the site with some nice styling.
-7. get fidbacks make changes.
 */
 </script>
 </body>
