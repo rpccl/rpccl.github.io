@@ -3,23 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>brf creater</title>
+    <title>BRF Creator</title>
 </head>
 <body>
-    <h1>Create Brf!</h1>
-
-    <textarea style="display:none;" id="textInput" rows="40" cols="50" placeholder="Enter text here..."></textarea><br>
+    <h1>Create BRF!</h1>
     <input type="file" id="fileInput" accept=".txt"><br>
-    <button onclick="convertBrf()">Convert to BRF</button>
-
-<p id="brfOutput"></p>
+    <button id="convertButton" style="display:none;">Convert to BRF</button>
+    <p id="brfOutput" aria-live="polite"></p>
     <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
 
-<h2>V 0.2 Ad support for english chars and all Gujarati and English Symballs..</h2>
- <script>
+    <h2>V 0.2 Added support for English and Gujarati characters and symbols.</h2>
 
-const brailleMap = {
+    <script>
+        const brailleMap = {
     "020": " ",    // Space (ASCII)
+    "10":"\n",
     "21": "6",    // ASCII Characters
     "22": "\"",
     "23": "#",
@@ -83,7 +81,7 @@ const brailleMap = {
     "5d": "]",
     "5e": "^",
     "5f": "_",
-    "60": "`",
+    "60": "",
     "61": "a",
     "62": "b",
     "63": "c",
@@ -194,275 +192,121 @@ const brailleMap = {
     "aef": "#i"
 };
 
-/*
-const brailleMap = {
-"020":" ",
-    "a81": "'",
-    "a82": ";",
-    "a83": ",",
-    "a85": "a",
-    "a86": ">",
-    "a87": "i",
-    "a88": "9",
-    "a89": "u",
-    "a8a": "|",
-    "a8b": "\"r",
-    "a8c": "\"r",
-    "a8d": "5",
-    "a8f": "e",
-    "a90": "/",
-    "a91": "x",
-    "a93": "o",
-    "a94": "{",
-    "a95": "k",
-    "a96": ".",
-    "a97": "g",
-    "a98": "<",
-    "a99": "+",
-    "a9a": "c",
-    "a9b": "*",
-    "a9c": "j",
-    "a9d": "0",
-    "a9e": "3",
-    "a9f": ")",
-    "aa0": "w",
-    "aa1": "$",
-    "aa2": "=",
-    "aa3": "#",
-    "aa4": "t",
-    "aa5": "?",
-    "aa6": "d",
-    "aa7": "!",
-    "aa8": "n",
-    "aaa": "p",
-    "aab": "6",
-    "aac": "b",
-    "aad": "~",
-    "aae": "m",
-    "aaf": "y",
-    "ab0": "r",
-    "ab2": "l",
-    "ab3": "_",
-    "ab5": "v",
-    "ab6": "%",
-    "ab7": "&",
-    "ab8": "s",
-    "ab9": "h",
-    "abc": "",
-    "abe": ">",
-    "abf": "i",
-    "ac0": "9",
-    "ac1": "u",
-    "ac2": "|",
-    "ac3": "\"r",
-    "ac4": "\"r",
-    "ac5": "5",
-    "ac7": "e",
-    "ac8": "/",
-    "ac9": "x",
-    "acb": "o",
-    "acc": "{",
-    "acd": "`",
-    "ae6": "#j",
-    "ae7": "#a",
-    "ae8": "#b",
-    "ae9": "#c",
-    "aea": "#d",
-    "aeb": "#e",
-    "aec": "#f",
-    "aed": "#g",
-    "aee": "#h",
-    "aef": "#i"
-}
-*/
-// Helper function to read file in chunks using a Promise
-function readFileInChunks(file, chunkSize = 1024 * 1024) { // default 1MB chunk size
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        const totalChunks = Math.ceil(file.size / chunkSize);
-        let currentChunk = 0;
-        let fileText = '';
+        function readFileInChunks(file, chunkSize = 1024 * 1024) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                let offset = 0;
+                let fileText = '';
 
-        reader.onload = function (e) {
-            fileText += e.target.result;
-            currentChunk++;
-
-            if (currentChunk < totalChunks) {
-                readNextChunk();
-            } else {
-                resolve(fileText); // Resolve with the entire file content
-            }
-        };
-
-        reader.onerror = function (err) {
-            reject(err);
-        };
-
-        function readNextChunk() {
-            const start = currentChunk * chunkSize;
-            const end = Math.min(file.size, start + chunkSize);
-            const blob = file.slice(start, end);
-            reader.readAsText(blob);
-        }
-
-        readNextChunk(); // Start reading the first chunk
-    });
-}
-
-// Convert text to BRF using Promises
-function convertTextToBrf(inputString) {
-    return new Promise((resolve, reject) => {
-        try {
-            let brailleTextArray = [];
-
-            // Build braille text
-            for (let i = 0; i < inputString.length; i++) {
-                let character = inputString[i];
-                let codePoint = character === ' ' ? '020' : character.codePointAt(0).toString(16);
-                brailleTextArray.push(brailleMap[codePoint] || '');
-            //alert(codePoint )
-}
-
-            // Join array into a string
-            let brailleText = brailleTextArray.join('');
-
-            // Perform swapping asynchronously if needed
-            let swappedTextArray = brailleText.split('');
-            for (let j = 1; j < swappedTextArray.length; j++) {
-                if (swappedTextArray[j] === '`') {
-                    // Swap current with the previous character
-                    [swappedTextArray[j - 1], swappedTextArray[j]] = [swappedTextArray[j], swappedTextArray[j - 1]];
+                function readNextChunk() {
+                    const blob = file.slice(offset, offset + chunkSize);
+                    reader.readAsText(blob);
                 }
+
+                reader.onload = (e) => {
+                    fileText += e.target.result;
+                    offset += chunkSize;
+
+                    if (offset < file.size) {
+                        readNextChunk();
+                    } else {
+                        resolve(fileText);
+                    }
+                };
+
+                reader.onerror = (err) => reject(err);
+                readNextChunk();
+            });
+        }
+
+        function convertTextToBrf(inputString) {
+            return new Promise((resolve) => {
+                const brailleTextArray = [];
+
+                for (let i = 0; i < inputString.length; i++) {
+                    let char = inputString[i];
+
+                    // Handle newline characters directly
+                    if (char === '\n') {
+                        brailleTextArray.push('\n');
+                    } else {
+                        let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
+                        brailleTextArray.push(brailleMap[codePoint] || '');
+                    }
+                }
+
+                let brailleText = brailleTextArray.join('');
+
+                        // Swap "`" symbols with their preceding characters
+        /*
+        let result = '';
+        for (let j = 0; j < brailleText.length; j++) {
+            if (brailleText[j] === '`' && j > 0) {
+                // Append the previous character first if exists
+                result += brailleText[j - 1];
+                // Append the '`' character next
+                result += brailleText[j];
+                // Skip the previous character in the next iteration
+                j++;
+            } else if (brailleText[j] !== '`') {
+                result += brailleText[j];
+            }
+        }
+*/
+        resolve(swapAllInstances(brailleText , "`"));
+            });
+        }
+
+        async function convertBrf() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                alert('Please select a file');
+                return;
             }
 
-            // Convert back to a string and resolve the promise
-            resolve(swappedTextArray.join(''));
+            try {
+                const textInput = await readFileInChunks(file);
+                const brfOutput = await convertTextToBrf(textInput);
 
-        } catch (error) {
-            reject(error); // Reject the promise in case of errors
+                document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
+                const blob = new Blob([brfOutput], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = url;
+                downloadLink.download = getFileNameWithoutExtension(file.name) + ".brf";
+                downloadLink.style.display = 'inline';
+
+            } catch (error) {
+                console.error('Error during conversion:', error);
+                alert('An error occurred while converting the text to BRF.');
+            }
         }
-    });
-}
 
-// Main function to handle file reading and BRF conversion using async/await
-async function convertBrf() {
-    const file = document.getElementById('fileInput').files[0]; // Get the selected file
-    if (!file) {
-        alert('Please select a file');
-        return;
+        function getFileNameWithoutExtension(filename) {
+            return filename.substring(0, filename.lastIndexOf('.')) || filename;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function () {
+            document.getElementById('convertButton').style.display = 'inline';
+        });
+
+        document.getElementById('convertButton').addEventListener('click', convertBrf);
+        function swapAllInstances(str, elementToSwap) {
+        // Convert the string to an array
+        let arr = str.split('');
+
+for (let i = 1; i < arr.length; i++) { // Start from index 1 to avoid out-of-bounds error
+    // Check if the current element matches the element to swap
+    if (arr[i] === elementToSwap) {
+        //let pelemen = arr[i-1];
+         //arr[i-1]=arr[i];
+          //arr[i]=pelemen;
+          // Swap with the previous element
+        [arr[i], arr[i - 1]] = [arr[i - 1], arr[i]];
     }
-
-    try {
-        // Read the file in chunks
-        const textInput = await readFileInChunks(file);
-
-        // Wait for the BRF conversion to complete
-        const brfOutput = await convertTextToBrf(textInput);
-
-        // Output and provide the download link
-        document.getElementById('brfOutput').innerText = "Your BRF is done. Please, download it by clicking on the download link.";
-        
-        const blob = new Blob([brfOutput], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const downloadLink = document.getElementById('downloadLink');
-        downloadLink.href = url;
-        downloadLink.style.display = 'inline';
-
-    } catch (error) {
-        console.error('Error during conversion:', error);
-        alert('An error occurred while converting the text to BRF.');
     }
+        return arr.join('');
 }
-
-// Event listener for file input to trigger the BRF conversion
-document.getElementById('fileInput').addEventListener('change', function () {
-    convertBrf();
-});
-
-/*
-Old v1
-
-function convertTextToBrf(inputString) {
-    let brailleText = "";
-    for (let i = 0; i < inputString.length; i++) {
-        let character = inputString[i];
-        let codePoint = character === ' ' ? '020' : character.codePointAt(0).toString(16);
-        brailleText += brailleMap[codePoint] || '';
-    }
-//alert(brailleText);
-    for (let j = 0; j < brailleText.length; j++) {
-if(brailleText[j]==="`") {
-brailleText=swapWithPreviousInString(brailleText, j);
-}
-}
-    return brailleText;
-}
-
-function convertBrf() {
-    const textInput = document.getElementById('textInput').value;
-    const brfOutput = convertTextToBrf(textInput);
-    document.getElementById('brfOutput').innerText = "Your Brf is done. Please, download it by clicking on Download link.";
-    
-    const blob = new Blob([brfOutput], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const downloadLink = document.getElementById('downloadLink');
-    downloadLink.href = url;
-    downloadLink.style.display = 'inline';
-}
-
-document.getElementById('fileInput').addEventListener('change', function() {
-    const file = this.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const text = e.target.result;
-            document.getElementById('textInput').value = text;
-        alert("Parsing is done.");
-    }
-        reader.readAsText(file);
-    }
-});
-// Function to swap a character with its previous character in a string
-function swapWithPreviousInString(str, index) {
-    // Convert string to array of characters
-    let arr = str.split('');
-    
-    // Check if the index is valid (it should not be the first character)
-    if (index > 0 && index < arr.length) {
-        // Temporary variable to hold the value of the character
-        let temp = arr[index];
-        // Swap the characters
-        arr[index] = arr[index - 1];
-        arr[index - 1] = temp;
-    } else {
-//        console.log('Invalid index provided');
-        return str; // Return original string if index is invalid
-    }
-    
-    // Convert array of characters back to string
-    return arr.join('');
-}
-
-// Example usage
-//let myString = "hello";
-//console.log('Before swap:', myString);
-
-//myString = swapWithPreviousInString(myString, 2); // Swapping character at index 2 with the previous character
-
-//console.log('After swap:', myString);
-*/
-/*
-Todos
-1. FixeMultiple numbers and remove a nosign if continuas numbers are detacted.
-2. Add dubbele Capetle sign if whole word is capitle.
-3. Make shure that all Gujarati and English Pantuations are conwerted proparly.
-4. Add Option to type text directoly, make changes in selected file and add option to rename downloaded file.
-
-add option to define a pagelength and line length like dbt.
-5. Refacter code to avoid Technicle debt. Remove unnessory Stringbuild and do everithing ijn a 1 arrayy. 
-6 Get a domain and published the site with some nice styling.
-7. get fidbacks make changes.
-*/
 </script>
 </body>
 </html>
