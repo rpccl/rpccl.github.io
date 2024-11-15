@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessible chessboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.css" integrity="sha512-KRrFrm+GAPOl6xxootmuQHKDoGiR2Gtifqd6XFUH++sluyhWui3vJCkmt0FN0k/H9TQn0f4sZFltC+XnQAKKvQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </head>
+<body>
+    <p><span id = "last-move" aria-live="polite"></span></p>
+    <div id="myBoard" style="width: 400px"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha512-bnIvzh6FU75ZKxp0GXLH9bewza/OIw6dLVh9ICg0gogclmYGguQJWl8U30WpbsGTqbIiAwxTsbe76DErLq5EDQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.js" integrity="sha512-TGU/O51undmqzEuGui6G+td333I3Wufy17Foi8O5TUc4z9rSJg+IpGmRCnLl5s0MUycrdj7vpD6YMsbRppVVzw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" integrity="sha512-xRllwz2gdZciIB+AkEbeq+gVhX8VB8XsfqeFbUh+SzHlN96dEduwtTuVuc2u9EROlmW9+yhRlxjif66ORpsgVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+var is = true;
+var board = null;
+var game = new Chess();
+
+// Variables to store the source and target squares for making moves
+let sourceSquare = null;
+
+// Object mapping squares to pieces
+const pieceMap = {
+  "bR": "Black Rook",
+  "bN": "Black Knight",
+  "bB": "Black Bishop",
+  "bQ": "Black Queen",
+  "bK": "Black King",
+  "bP": "Black Pawn",
+  "wR": "White Rook",
+  "wN": "White Knight",
+  "wB": "White Bishop",
+  "wQ": "White Queen",
+  "wK": "White King",
+  "wP": "White Pawn"
+};
+
+function makeRandomMove() {
+  var possibleMoves = game.moves();
+
+  // exit if the game is over
+  if (game.game_over()) return;
+
+  var randomIdx = Math.floor(Math.random() * possibleMoves.length);
+  game.move(possibleMoves[randomIdx]);
+  board.position(game.fen());
+  if (is) {
+    alert("done");
+    is = false;
+  }
+  //window.setTimeout(makeRandomMove, 2000);
+}
+
+function onMoveEnd(oldPos, newPos) {
+  console.log('Old position: ' + JSON.stringify(oldPos));
+  console.log('New position: ' + JSON.stringify(newPos));
+  const moveHistory = game.history({ verbose: true });
+const lastMove = moveHistory[moveHistory.length - 1];
+if (lastMove) {
+  //const formattedMove = `${lastMove.piece.toUpperCase()}${lastMove.from}${lastMove.to}`;
+  const lastMove = moveHistory[moveHistory.length - 1].san;
+  document.getElementById("last-move").innerText = 'Last move: ' + lastMove;
+}
+
+  // Update aria-labels after move
+  const squareElements = document.querySelectorAll('[data-square]');
+  squareElements.forEach((element) => {
+    const squareValue = element.getAttribute('data-square');
+    const piece = game.get(squareValue);
+    if (piece) {
+      const pieceLabel = pieceMap[piece.color + piece.type.toUpperCase()] || "";
+      element.setAttribute('aria-label', `${squareValue}, ${pieceLabel}`);
+    } else {
+      element.setAttribute('aria-label', `${squareValue}, no piece`);
+    }
+  });
+}
+
+var config = {
+  position: 'start',
+  onMoveEnd: onMoveEnd
+};
+var board = Chessboard('myBoard', config);
+
+// Select all elements with the data-square attribute
+const squareElements = document.querySelectorAll('[data-square]');
+
+// Loop through each element and set an aria-label, tabindex, and click handler
+squareElements.forEach((element) => {
+  const squareValue = element.getAttribute('data-square');
+  element.setAttribute('aria-label', squareValue);
+  element.setAttribute('tabindex', '0');
+
+  // Add a click handler for making moves
+  element.addEventListener('click', () => {
+    if (!sourceSquare) {
+      // First click: set the source square and update aria-label
+      sourceSquare = squareValue;
+      const piece = game.get(sourceSquare);
+      if (piece) {
+        const pieceLabel = pieceMap[piece.color + piece.type.toUpperCase()] || "";
+        element.setAttribute('aria-label', `${squareValue}, ${pieceLabel}, selected`);
+      }
+      console.log(`Source square set to '${sourceSquare}'.`);
+    } else if (sourceSquare === squareValue) {
+      // Handle clicking the same source square twice (deselect)
+      console.log(`Deselecting source square '${sourceSquare}'.`);
+      const piece = game.get(sourceSquare);
+      if (piece) {
+        const pieceLabel = pieceMap[piece.color + piece.type.toUpperCase()] || "";
+        element.setAttribute('aria-label', `${squareValue}, ${pieceLabel}`);
+      } else {
+        element.setAttribute('aria-label', `${squareValue}, no piece`);
+      }
+      sourceSquare = null;
+    } else {
+      // Second click: set the target square and make the move
+      const targetElement = document.querySelector(`[data-square='${sourceSquare}']`);
+      const move = game.move({ from: sourceSquare, to: squareValue });
+      if (move) {
+        board.position(game.fen());
+        console.log(`Move made from '${sourceSquare}' to '${squareValue}'.`);
+        // Reset the aria-label of the source square
+        if (targetElement) {
+          const piece = game.get(sourceSquare);
+          if (piece) {
+            const pieceLabel = pieceMap[piece.color + piece.type.toUpperCase()] || "";
+            targetElement.setAttribute('aria-label', `${sourceSquare}, ${pieceLabel}`);
+          } else {
+            targetElement.setAttribute('aria-label', `${sourceSquare}, no piece`);
+          }
+        }
+      } else {
+        console.log(`Invalid move from '${sourceSquare}' to '${squareValue}'.`);
+      }
+      // Reset sourceSquare after the move attempt
+      sourceSquare = null;
+    }
+  });
+});
+
+// Highlight all elements with "notation" in the class name and set aria-hidden
+const notationElements = document.querySelectorAll('[class*="notation"]');
+notationElements.forEach((element) => {
+  element.setAttribute('aria-hidden', 'true');
+  element.style.backgroundColor = 'yellow';
+});
+
+console.log('Aria-labels, tabindex, and click handlers have been added to all elements with data-square attribute. Elements containing "notation" in class name have been highlighted and set to aria-hidden.');
+
+//window.setTimeout(makeRandomMove, 2000);
+const pieceName = {
+  "P": 'pawn',
+  "N": 'knight',
+  "B": 'bishop',
+  "R": 'rook',
+  "Q": 'queen',
+  "K": 'king',
+};
+
+</script>
+</body>
+</html>
