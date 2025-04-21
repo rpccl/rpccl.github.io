@@ -7,8 +7,14 @@
 </head>
 <body>
     <h1>Create BRF!</h1>
-    <input type="file" id="fileInput" accept=".txt"><br>
-    <button id="convertButton" style="display:none;">Convert to BRF</button>
+
+    <textarea id="textInput" rows="10" cols="60" placeholder="Paste or type your text here..."></textarea><br><br>
+
+    <label for="fileInput">Or select a .txt file:</label><br>
+    <input type="file" id="fileInput" accept=".txt"><br><br>
+
+    <button id="convertButton">Convert to BRF</button>
+
     <p id="brfOutput" aria-live="polite"></p>
     <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
 
@@ -191,7 +197,6 @@
     "aee": "#h",
     "aef": "#i"
 };
-
         function readFileInChunks(file, chunkSize = 1024 * 1024) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -206,7 +211,6 @@
                 reader.onload = (e) => {
                     fileText += e.target.result;
                     offset += chunkSize;
-
                     if (offset < file.size) {
                         readNextChunk();
                     } else {
@@ -225,42 +229,82 @@
 
                 for (let i = 0; i < inputString.length; i++) {
                     let char = inputString[i];
-
-                    // Handle newline characters directly
                     if (char === '\n') {
                         brailleTextArray.push('\n');
                     } else {
                         let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
                         brailleTextArray.push(brailleMap[codePoint] || '');
-                    console.log(codePoint+" ");
-                }
+                    }
                 }
 
-                let brailleText = brailleTextArray.join('');
-
-                        
-        resolve(formatBrf(brailleText));
+                resolve(formatBrf(brailleTextArray.join('')));
             });
         }
 
-        async function convertBrf() {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) {
-                alert('Please select a file');
-                return;
+        function formatBrf(brf) {
+            let newBrf = removeExtraNumberSignsInWordFromText(brf);
+            return swapAllInstances(newBrf, "`");
+        }
+
+        function removeExtraNumberSignsInWordFromText(text) {
+            const tokens = text.match(/(\s+|[^\s]+)/g);
+            const cleaned = tokens.map(token => {
+                if (token.includes('#') && /\S/.test(token)) {
+                    const firstIndex = token.indexOf('#');
+                    return token.slice(0, firstIndex + 1) + token.slice(firstIndex + 1).replace(/#/g, '');
+                }
+                return token;
+            });
+            return cleaned.join('');
+        }
+
+        function swapAllInstances(str, elementToSwap) {
+            let arr = str.split('');
+            for (let i = 1; i < arr.length; i++) {
+                if (arr[i] === elementToSwap) {
+                    [arr[i], arr[i - 1]] = [arr[i - 1], arr[i]];
+                }
             }
+            return arr.join('');
+        }
+
+        function getFileNameWithoutExtension(filename) {
+            return filename.substring(0, filename.lastIndexOf('.')) || filename;
+        }
+
+        async function convertBrfAuto() {
+            const textContent = document.getElementById('textInput').value.trim();
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
 
             try {
-                const textInput = await readFileInChunks(file);
-                const brfOutput = await convertTextToBrf(textInput);
+                let inputText = '';
+                let outputFileName = 'output';
 
+                if (textContent) {
+                    inputText = textContent;
+                    const userFileName = prompt("Enter the BRF file name (without extension):", "output");
+                    if (userFileName) {
+                        outputFileName = userFileName.trim();
+                    }
+                } else if (file) {
+                    inputText = await readFileInChunks(file);
+                    outputFileName = getFileNameWithoutExtension(file.name);
+                } else {
+                    alert('Please paste text or select a file.');
+                    return;
+                }
+
+                const brfOutput = await convertTextToBrf(inputText);
                 document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
                 const blob = new Blob([brfOutput], { type: 'text/brf' });
                 const url = URL.createObjectURL(blob);
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = url;
-                downloadLink.download = getFileNameWithoutExtension(file.name) + ".brf";
+                downloadLink.download = outputFileName + ".brf";
                 downloadLink.style.display = 'inline';
+
+                document.getElementById('textInput').value = '';
 
             } catch (error) {
                 console.error('Error during conversion:', error);
@@ -268,51 +312,8 @@
             }
         }
 
-        function getFileNameWithoutExtension(filename) {
-            return filename.substring(0, filename.lastIndexOf('.')) || filename;
-        }
-
-        document.getElementById('fileInput').addEventListener('change', function () {
-            document.getElementById('convertButton').style.display = 'inline';
-        });
-
-        document.getElementById('convertButton').addEventListener('click', convertBrf);
-        function formatBrf(brf) {
-            let newBrf = removeExtraNumberSignsInWordFromText(brf);
-            return swapAllInstances(newBrf , "`");
-        }
-        function removeExtraNumberSignsInWordFromText(text) {
-    // Match all words, punctuation, spaces, and line breaks separately
-    const tokens = text.match(/(\s+|[^\s]+)/g); // Splits into words and whitespace
-
-    const cleaned = tokens.map(token => {
-        if (token.includes('#') && /\S/.test(token)) {
-            const firstIndex = token.indexOf('#');
-            // Keep only the first '#' in this token
-            return token.slice(0, firstIndex + 1) + token.slice(firstIndex + 1).replace(/#/g, '');
-        }
-        return token; // Return untouched if no # or it's just whitespace
-    });
-
-    return cleaned.join('');
-}
-
-function swapAllInstances(str, elementToSwap) {
-        // Convert the string to an array
-        let arr = str.split('');
-
-for (let i = 1; i < arr.length; i++) { // Start from index 1 to avoid out-of-bounds error
-    // Check if the current element matches the element to swap
-    if (arr[i] === elementToSwap) {
-        //let pelemen = arr[i-1];
-         //arr[i-1]=arr[i];
-          //arr[i]=pelemen;
-          // Swap with the previous element
-        [arr[i], arr[i - 1]] = [arr[i - 1], arr[i]];
-    }
-    }
-        return arr.join('');
-}
-</script>
+        document.getElementById('convertButton').addEventListener('click', convertBrfAuto);
+    </script>
 </body>
 </html>
+  
