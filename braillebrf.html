@@ -232,28 +232,14 @@
                     } else {
                         let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
                         brailleTextArray.push(brailleMap[codePoint] || '');
-                    }
+                    console.log(codePoint+" ");
+                }
                 }
 
                 let brailleText = brailleTextArray.join('');
 
-                        // Swap "`" symbols with their preceding characters
-        /*
-        let result = '';
-        for (let j = 0; j < brailleText.length; j++) {
-            if (brailleText[j] === '`' && j > 0) {
-                // Append the previous character first if exists
-                result += brailleText[j - 1];
-                // Append the '`' character next
-                result += brailleText[j];
-                // Skip the previous character in the next iteration
-                j++;
-            } else if (brailleText[j] !== '`') {
-                result += brailleText[j];
-            }
-        }
-*/
-        resolve(swapAllInstances(brailleText , "`"));
+                        
+        resolve(formatBrf(brailleText));
             });
         }
 
@@ -269,7 +255,7 @@
                 const brfOutput = await convertTextToBrf(textInput);
 
                 document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
-                const blob = new Blob([brfOutput], { type: 'text/plain' });
+                const blob = new Blob([brfOutput], { type: 'text/brf' });
                 const url = URL.createObjectURL(blob);
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = url;
@@ -291,7 +277,27 @@
         });
 
         document.getElementById('convertButton').addEventListener('click', convertBrf);
-        function swapAllInstances(str, elementToSwap) {
+        function formatBrf(brf) {
+            let newBrf = removeExtraNumberSignsInWordFromText(brf);
+            return swapAllInstances(newBrf , "`");
+        }
+        function removeExtraNumberSignsInWordFromText(text) {
+    // Match all words, punctuation, spaces, and line breaks separately
+    const tokens = text.match(/(\s+|[^\s]+)/g); // Splits into words and whitespace
+
+    const cleaned = tokens.map(token => {
+        if (token.includes('#') && /\S/.test(token)) {
+            const firstIndex = token.indexOf('#');
+            // Keep only the first '#' in this token
+            return token.slice(0, firstIndex + 1) + token.slice(firstIndex + 1).replace(/#/g, '');
+        }
+        return token; // Return untouched if no # or it's just whitespace
+    });
+
+    return cleaned.join('');
+}
+
+function swapAllInstances(str, elementToSwap) {
         // Convert the string to an array
         let arr = str.split('');
 

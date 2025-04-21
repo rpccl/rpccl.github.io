@@ -82,6 +82,7 @@ var config = {
   onMoveEnd: onMoveEnd
 };
 var board = Chessboard('myBoard', config);
+onMoveEnd({}, board.position());
 
 // Select all elements with the data-square attribute
 const squareElements = document.querySelectorAll('[data-square]');
