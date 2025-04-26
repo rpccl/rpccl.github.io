@@ -18,6 +18,8 @@
     <p id="brfOutput" aria-live="polite"></p>
     <a id="downloadLink" href="#" download="output.brf" style="display:none;">Download BRF</a>
 
+    <p id="brfstr" aria-live="polite"></p>
+    
     <h2>V 0.2 Added support for English and Gujarati characters and symbols.</h2>
 
     <script>
@@ -125,15 +127,15 @@
     "a83": ",",
     "a85": "a",
     "a86": ">",
-    "a87": "i",
-    "a88": "9",
-    "a89": "u",
-    "a8a": "|",
-    "a8b": "\"r",
-    "a8c": "\"r",
-    "a8d": "5",
-    "a8f": "e",
-    "a90": "/",
+    "a87": "ai",
+    "a88": "a9",
+    "a89": "au",
+    "a8a": "a|",
+    "a8b": "a\"r",
+    "a8c": "a\"r",
+    "a8d": "a5",
+    "a8f": "ae",
+    "a90": "a/",
     "a91": "x",
     "a93": "o",
     "a94": "{",
@@ -205,7 +207,7 @@
 
                 function readNextChunk() {
                     const blob = file.slice(offset, offset + chunkSize);
-                    reader.readAsText(blob);
+                    reader.readAsText(blob, "utf-8");
                 }
 
                 reader.onload = (e) => {
@@ -224,16 +226,18 @@
         }
 
         function convertTextToBrf(inputString) {
+            
             return new Promise((resolve) => {
                 const brailleTextArray = [];
 
-                for (let i = 0; i < inputString.length; i++) {
+                for (let i = 0; i<inputString.length; i++) {
                     let char = inputString[i];
                     if (char === '\n') {
                         brailleTextArray.push('\n');
                     } else {
                         let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
-                        brailleTextArray.push(brailleMap[codePoint] || '');
+                        //alert(char+" "+codePoint);
+                            brailleTextArray.push(brailleMap[codePoint] || '');
                     }
                 }
 
@@ -296,8 +300,9 @@
                 }
 
                 const brfOutput = await convertTextToBrf(inputText);
-                document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
                 const blob = new Blob([brfOutput], { type: 'text/brf' });
+                document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
+                document.getElementById('brfstr').innerText = brfOutput;
                 const url = URL.createObjectURL(blob);
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = url;
