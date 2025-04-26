@@ -302,7 +302,7 @@
                 const brfOutput = await convertTextToBrf(inputText);
                 const blob = new Blob([brfOutput], { type: 'text/brf' });
                 document.getElementById('brfOutput').innerText = "Your BRF is ready. Please download it below.";
-                document.getElementById('brfstr').innerText = brfOutput;
+                //document.getElementById('brfstr').innerText = brfOutput;
                 const url = URL.createObjectURL(blob);
                 const downloadLink = document.getElementById('downloadLink');
                 downloadLink.href = url;
