@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Practice multiplying double-digit numbers with instant feedback, voice input, timer tracking, and accessibility support. Improve your math skills interactively.">
+  <title>Multiplication Practice</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    main.container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      font-size: 2rem;
+    }
+    h2, h3 {
+      color: #34495e;
+    }
+    button, input {
+      font-size: 1.1rem;
+      padding: 10px 16px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+    input[type="number"] {
+      width: 80%;
+    }
+    button:hover {
+      background-color: #2ecc71;
+      color: white;
+      border-color: #27ae60;
+      cursor: pointer;
+    }
+    #feedback {
+      font-size: 1.2rem;
+      color: red;
+      min-height: 1.4em;
+    }
+    #timer, #best-time, #question-count {
+      font-size: 1rem;
+      margin-top: 10px;
+      color: #555;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Multiplication Practice</h1>
+    <div id="question-count">Questions Answered: 0</div>
+    <div id="question" aria-live="polite"></div>
+    <input type="number" id="answer" aria-label="Type your answer here" />
+    <br />
+    <button id="submit">Submit Answer</button>
+    <button id="speak">Answer with Voice</button>
+    <div id="feedback" aria-live="assertive"></div>
+    <div id="timer">Time: 0s</div>
+    <div id="best-time">Best Time: --</div>
+  </main>
+
+  <section style="max-width: 700px; margin: 0 auto; padding: 20px;">
+    <h2>About the Website</h2>
+    <p>This web application is designed to help users practice multiplication of two-digit numbers. It generates random multiplication questions, tracks the time taken to answer each correctly, and maintains a record of the user's best time using local storage. The app supports both typed and voice-based answers, provides feedback for correct and incorrect responses, and displays a running count of how many questions have been answered. It is fully accessible and optimized for screen reader users.</p>
+    <h3>Created by Rahul Vaniya.</h3>
+  </section>
+
+  <footer>&copy; 2025 Multiplication Practice App</footer>
+
+  <script>
+    let num1, num2, startTime, timerInterval, questionCount = 0;
+    let bestTime = localStorage.getItem('bestTime');
+    bestTime = bestTime ? parseInt(bestTime) : null;
+
+    const questionEl = document.getElementById('question');
+    const answerEl = document.getElementById('answer');
+    const feedbackEl = document.getElementById('feedback');
+    const timerEl = document.getElementById('timer');
+    const bestTimeEl = document.getElementById('best-time');
+    const questionCountEl = document.getElementById('question-count');
+
+    if (bestTime !== null) {
+      bestTimeEl.textContent = `Best Time: ${bestTime}s`;
+    }
+
+    function updateQuestionCount() {
+      questionCountEl.textContent = `Questions Answered: ${questionCount}`;
+    }
+
+    function generateQuestion() {
+      num1 = Math.floor(Math.random() * 90 + 10);
+      num2 = Math.floor(Math.random() * 90 + 10);
+      questionEl.textContent = `What is ${num1} × ${num2}?`;
+      answerEl.value = '';
+      feedbackEl.textContent = '';
+      startTimer();
+      answerEl.focus();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timerEl.textContent = `Time: ${elapsed}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      return Math.floor((Date.now() - startTime) / 1000);
+    }
+
+    function checkAnswer() {
+      const userAnswer = parseInt(answerEl.value);
+      if (isNaN(userAnswer)) {
+        feedbackEl.textContent = 'Please enter a number.';
+        return;
+      }
+
+      if (userAnswer === num1 * num2) {
+        const timeTaken = stopTimer();
+        feedbackEl.textContent = 'Correct!';
+
+        if (bestTime === null || timeTaken < bestTime) {
+          bestTime = timeTaken;
+          localStorage.setItem('bestTime', bestTime);
+          bestTimeEl.textContent = `Best Time: ${bestTime}s`;
+        }
+
+        questionCount++;
+        updateQuestionCount();
+        setTimeout(generateQuestion, 1000);
+      } else {
+        feedbackEl.textContent = `Incorrect. You answered ${userAnswer}. Try again.`;
+        answerEl.value = '';
+        answerEl.focus();
+      }
+    }
+
+    document.getElementById('submit').addEventListener('click', checkAnswer);
+    answerEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+
+    const speakBtn = document.getElementById('speak');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = function (event) {
+        const spoken = event.results[0][0].transcript;
+        const num = parseInt(spoken);
+        if (!isNaN(num)) {
+          answerEl.value = num;
+          checkAnswer();
+        } else {
+          feedbackEl.textContent = 'Could not understand number.';
+        }
+      };
+
+      recognition.onerror = function (event) {
+        feedbackEl.textContent = 'Voice input error: ' + event.error;
+        speakBtn.disabled = false;
+      };
+
+      recognition.onend = () => {
+        speakBtn.disabled = false;
+      };
+
+      speakBtn.addEventListener('click', () => {
+        speakBtn.disabled = true;
+        recognition.start();
+      });
+    } else {
+      speakBtn.disabled = true;
+      speakBtn.textContent = 'Voice not supported';
+    }
+
+    window.addEventListener('beforeunload', () => {
+      clearInterval(timerInterval);
+    });
+
+    generateQuestion();
+    updateQuestionCount();
+    answerEl.focus();
+  </script>
+</body>
+</html>
