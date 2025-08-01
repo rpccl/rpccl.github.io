@@ -20,7 +20,7 @@
 
     <p id="brfstr" aria-live="polite"></p>
     
-    <h2>V 0.2 Added support for English and Gujarati characters and symbols.</h2>
+    <h2>V 0.3 Fixed ishueds with Gujarati Matras.</h2>
 
     <script>
         const brailleMap = {
@@ -56,7 +56,7 @@
     "3c": "<",
     "3d": "=",
     "3e": ">",
-    "3f": "?",
+    "3f": "8",
     "40": "@",
     "41": "A",
     "42": "B",
@@ -127,15 +127,15 @@
     "a83": ",",
     "a85": "a",
     "a86": ">",
-    "a87": "ai",
-    "a88": "a9",
-    "a89": "au",
-    "a8a": "a|",
-    "a8b": "a\"r",
-    "a8c": "a\"r",
-    "a8d": "a5",
-    "a8f": "ae",
-    "a90": "a/",
+    "a87": "i",
+    "a88": "9",
+    "a89": "u",
+    "a8a": "|",
+    "a8b": "\"r",
+    "a8c": "\"r",
+    "a8d": "5",
+    "a8f": "e",
+    "a90": "/",
     "a91": "x",
     "a93": "o",
     "a94": "{",
@@ -173,7 +173,7 @@
     "ab7": "&",
     "ab8": "s",
     "ab9": "h",
-    "abc": "",
+    "abc": "a",
     "abe": ">",
     "abf": "i",
     "ac0": "9",
@@ -199,6 +199,17 @@
     "aee": "#h",
     "aef": "#i"
 };
+/*
+    "a87": "ai",
+    "a88": "a9",
+    "a89": "au",
+    "a8a": "a|",
+    "a8b": "a\"r",
+    "a8c": "a\"r",
+    "a8d": "a5",
+    "a8f": "ae",
+    "a90": "a/"
+*/
         function readFileInChunks(file, chunkSize = 1024 * 1024) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -225,25 +236,47 @@
             });
         }
 
-        function convertTextToBrf(inputString) {
-            
-            return new Promise((resolve) => {
-                const brailleTextArray = [];
+function convertTextToBrf(inputString) {
+    return new Promise((resolve) => {
+        const brailleTextArray = [];
 
-                for (let i = 0; i<inputString.length; i++) {
-                    let char = inputString[i];
-                    if (char === '\n') {
-                        brailleTextArray.push('\n');
+        for (let i = 0; i < inputString.length; i++) {
+            let char = inputString[i];
+
+            if (char === '\n') {
+                brailleTextArray.push('\n');
+            } else {
+                let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
+
+                // Special Gujarati codes that may get prefixed with "a"
+                const specialCodes = ["a87", "a88", "a89", "a8a", "a8b", "a8c", "a8d", "a8f", "a90"];
+
+                // Full set of vowel codes (including special group)
+                const vowelCodes = [
+                    "abe", "abf", "ac0", "ac1", "ac2", "ac3", "ac4", "ac5", "ac7", "ac8", "ac9", "acb", "acc",
+                    ...specialCodes
+                ];
+
+                let prevChar = i > 0 ? inputString[i - 1] : ' ';
+                let prevCodePoint = prevChar === ' ' ? '020' : prevChar.codePointAt(0).toString(16);
+                let isPrevWhiteSpace = /\s/.test(prevChar);
+                let isPrevVowel = vowelCodes.includes(prevCodePoint);
+
+                if (specialCodes.includes(codePoint)) {
+                    if (!isPrevWhiteSpace && !isPrevVowel) {
+                        brailleTextArray.push('a' + (brailleMap[codePoint] || ''));
                     } else {
-                        let codePoint = char === ' ' ? '020' : char.codePointAt(0).toString(16);
-                        //alert(char+" "+codePoint);
-                            brailleTextArray.push(brailleMap[codePoint] || '');
+                        brailleTextArray.push(brailleMap[codePoint] || '');
                     }
+                } else {
+                    brailleTextArray.push(brailleMap[codePoint] || '');
                 }
-
-                resolve(formatBrf(brailleTextArray.join('')));
-            });
+            }
         }
+
+        resolve(formatBrf(brailleTextArray.join('')));
+    });
+}
 
         function formatBrf(brf) {
             let newBrf = removeExtraNumberSignsInWordFromText(brf);
