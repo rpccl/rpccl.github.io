@@ -23,10 +23,11 @@
     <h2>V 0.3 Fixed ishueds with Gujarati Matras.</h2>
   <!-- Load Liblouis and its UI support -->
   <script src="https://liblouis.io/translate/liblouis.js"></script>
-  <script src="https://liblouis.io/translate/ui.js"></script>
+  
 
     <script>
         louis.init(function(tables) {
+alert("test");
   tables.forEach(function(table, i) {
     console.log(i + 1 + ".", table.indexName, "(", table.file, ")");
   });
