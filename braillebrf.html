@@ -21,9 +21,18 @@
     <p id="brfstr" aria-live="polite"></p>
     
     <h2>V 0.3 Fixed ishueds with Gujarati Matras.</h2>
+  <!-- Load Liblouis and its UI support -->
+  <script src="https://liblouis.io/translate/liblouis.js"></script>
+  <script src="https://liblouis.io/translate/ui.js"></script>
 
     <script>
-        const brailleMap = {
+        louis.init(function(tables) {
+  tables.forEach(function(table, i) {
+    console.log(i + 1 + ".", table.indexName, "(", table.file, ")");
+  });
+});
+
+const brailleMap = {
     "020": " ",    // Space (ASCII)
     "10":"\n",
     "21": "6",    // ASCII Characters
