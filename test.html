@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+  <meta charset="UTF-8">
+  <title>ક્વિઝ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; line-height: 1.6; }
+    header, main, footer { max-width: 800px; margin: auto; padding: 1rem; }
+    fieldset { margin-bottom: 1rem; }
+    .navigation { display: flex; gap: 1rem; }
+    button { padding: 0.5rem 1rem; }
+    .status { margin-top: 0.5rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ગુજરાતી ક્વિઝ</h1>
+  <p>સમય બાકી: <span id="timer">300</span> સેકન્ડ</p>
+</header>
+
+<main>
+  <section>
+    <h2>પ્રશ્ન <span id="qNumber"></span></h2>
+    <form id="quizForm">
+      <fieldset>
+        <legend aria-live="assertive" id="questionText"></legend>
+        <div id="options"></div>
+      </fieldset>
+
+      <label>
+        <input type="checkbox" id="markReview">
+   Mark for review
+      </label>
+
+      <p class="status" aria-live="assertive" id="statusMessage"></p>
+
+      <div class="navigation">
+        <button type="button" id="prevBtn">Privous</button>
+        <button type="button" id="nextBtn">Next</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <p>ક્વિઝ પૂરી થયા પછી જવાબો સબમિટ થશે.</p>
+</footer>
+
+<script>
+const questions = [
+  {
+    q: "ભારતનું બંધારણ કયા વર્ષે અમલમાં આવ્યું?",
+    options: ["1947", "1950", "1952", "1960"],
+    answer: 1
+  },
+  {
+    q: "ગુજરાતની રાજધાની કઈ છે?",
+    options: ["સુરત", "વડોદરા", "અમદાવાદ", "ગાંધીનગર"],
+    answer: 3
+  },
+  {
+    q: "પ્લેનેટ ઑફ રિંગ્સ કયો ગ્રહ છે?",
+    options: ["મંગળ", "શનિ", "શુક્ર", "બુધ"],
+    answer: 1
+  },
+  {
+    q: "સૌથી લાંબી નદી કઈ છે?",
+    options: ["અમેઝોન", "નાઇલ", "યમુના", "મિસિસિપી"],
+    answer: 1
+  },
+  {
+    q: "ભારતના પ્રથમ રાષ્ટ્રપતિ કોણ હતા?",
+    options: ["જવાહરલાલ નહેરુ", "રાજેન્દ્ર પ્રસાદ", "સરદાર પટેલ", "મહાત્મા ગાંધી"],
+    answer: 1
+  },
+  {
+    q: "HTML નો પૂરું નામ શું છે?",
+    options: ["High Text Mark Language", "Hyper Text Markup Language", "Hyper Transfer Mark Language", "None"],
+    answer: 1
+  },
+  {
+    q: "CPU નો મુખ્ય ભાગ કયો છે?",
+    options: ["RAM", "ALU", "Hard Disk", "Monitor"],
+    answer: 1
+  },
+  {
+    q: "સૂર્ય કઈ પ્રકારનો તારું છે?",
+    options: ["લાલ વિશાળ", "સફેદ બોન", "પીળો બોન", "પીળો બૌન"],
+    answer: 3
+  },
+  {
+    q: "ભારતનો રાષ્ટ્રીય પક્ષી કયો છે?",
+    options: ["મોર", "કાગડો", "હંસ", "ચકલી"],
+    answer: 0
+  },
+  {
+    q: "1 બાઇટમાં કેટલા બિટ હોય છે?",
+    options: ["4", "6", "8", "16"],
+    answer: 2
+  }
+];
+
+let current = 0;
+let answers = Array(questions.length).fill(null);
+let review = Array(questions.length).fill(false);
+
+const qNumber = document.getElementById("qNumber");
+const questionText = document.getElementById("questionText");
+const optionsDiv = document.getElementById("options");
+const markReview = document.getElementById("markReview");
+const statusMessage = document.getElementById("statusMessage");
+
+function loadQuestion() {
+  const q = questions[current];
+  qNumber.textContent = current + 1;
+  questionText.textContent = q.q;
+  optionsDiv.innerHTML = "";
+
+  q.options.forEach((opt, i) => {
+    const label = document.createElement("label");
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "option";
+    radio.value = i;
+    if (answers[current] === i) radio.checked = true;
+    label.appendChild(radio);
+    label.append(" " + opt);
+    optionsDiv.appendChild(label);
+    optionsDiv.appendChild(document.createElement("br"));
+  });
+
+  markReview.checked = review[current];
+  statusMessage.textContent = review[current] ? "આ પ્રશ્ન રિવ્યુ માટે ચિહ્નિત છે." : "";
+}
+
+function canMoveNext() {
+  return answers[current] !== null || review[current];
+}
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+  if (!canMoveNext()) {
+    statusMessage.textContent = " આ પ્રશનનો જવાબ આપ્વો ફરજ્યાત છે.";
+    return;
+  }
+  if (current < questions.length - 1) {
+    current++;
+    loadQuestion();
+  }
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if (current > 0) {
+    current--;
+    loadQuestion();
+  }
+});
+
+optionsDiv.addEventListener("change", (e) => {
+  if (e.target.name === "option") {
+    answers[current] = Number(e.target.value);
+    statusMessage.textContent = "";
+  }
+});
+
+markReview.addEventListener("change", () => {
+  review[current] = markReview.checked;
+  statusMessage.textContent = review[current] ? "આ પ્રશ્ન રિવ્યુ માટે ચિહ્નિત છે." : "";
+});
+
+let timeLeft = 300;
+const timerSpan = document.getElementById("timer");
+setInterval(() => {
+  if (timeLeft > 0) {
+    timeLeft--;
+    timerSpan.textContent = timeLeft;
+  }
+}, 1000);
+
+loadQuestion();
+</script>
+
+</body>
+</html>
