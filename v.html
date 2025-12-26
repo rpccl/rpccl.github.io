@@ -1,114 +1,165 @@
-                        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>JS Voice Email</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <title>AI Voice Email (Mock)</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        button { padding: 15px 30px; font-size: 1.2em; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 5px; margin-top: 20px;}
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #status { margin-top: 20px; color: #555; font-weight: bold; }
-        #transcript { font-style: italic; color: #888; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 40px; background-color: #f0f2f5; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { margin-bottom: 10px; color: #4285F4; }
+        
+        /* The Listening Button */
+        #micBtn {
+            font-size: 3em; background: none; border: none; cursor: pointer;
+            transition: transform 0.2s; filter: grayscale(100%);
+        }
+        #micBtn:hover { transform: scale(1.1); }
+        #micBtn.listening { filter: grayscale(0%); animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* Status & Output areas */
+        .status { margin: 20px 0; font-size: 1.1em; color: #666; height: 30px;}
+        .transcript { font-style: italic; color: #888; margin-bottom: 20px; min-height: 20px;}
+        
+        /* The "Faked" Email Display */
+        #emailPreview {
+            text-align: left; background: #fffde7; border: 1px solid #fdd835; 
+            padding: 20px; border-radius: 8px; display: none; margin-top: 20px;
+        }
+        .field { margin-bottom: 10px; }
+        .label { font-weight: bold; color: #555; width: 60px; display: inline-block;}
     </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
 </head>
 <body>
 
-    <div class="container">
-        <h1>🗣️ JS Voice Email</h1>
-        <p>Say: "Send email [your message]"</p>
+    <div class="card">
+        <h1>🧠 AI Email Assistant</h1>
+        <p>Click the mic and say something like:<br>
+        <i>"Send an email to Sarah asking if the project is ready."</i></p>
         
-        <div id="transcript">(Waiting for voice...)</div>
-        <div id="status"></div>
+        <button id="micBtn" onclick="toggleListening()">🎙️</button>
         
-        <button id="talkBtn" onclick="startListening()">🎤 Start Speaking</button>
+        <div class="status" id="status">Ready</div>
+        <div class="transcript" id="transcript"></div>
+
+        <div id="emailPreview">
+            <h3>✉️ Email Draft Generated</h3>
+            <div class="field"><span class="label">To:</span> <span id="toDisplay"></span></div>
+            <div class="field"><span class="label">Subject:</span> <span id="subDisplay"></span></div>
+            <div class="field"><span class="label">Body:</span> <span id="bodyDisplay"></span></div>
+            <hr>
+            <div style="text-align:right; font-size:0.8em; color:green;">✓ Simulated Send Success</div>
+        </div>
     </div>
 
-    <script>
-        // --- CONFIGURATION ---
-        // REPLACE THESE WITH YOUR EMAILJS KEYS!
-        const SERVICE_ID = "YOUR_SERVICE_ID";
-        const TEMPLATE_ID = "YOUR_TEMPLATE_ID";
-        const PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // Initialize EmailJS
-        emailjs.init(PUBLIC_KEY);
+        // --- 1. CONFIGURATION ---
+        // ⚠️ SECURITY WARNING: Never use this Key in a real public website. 
+        // It's okay for local testing, but anyone who views source can see it.
+        const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U"; 
 
-        // --- VOICE RECOGNITION SETUP ---
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // --- 2. VOICE SETUP ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
+        const micBtn = document.getElementById('micBtn');
         const statusDiv = document.getElementById('status');
         const transDiv = document.getElementById('transcript');
-        const btn = document.getElementById('talkBtn');
+        const previewDiv = document.getElementById('emailPreview');
 
-        recognition.onstart = () => {
-            statusDiv.innerText = "Listening...";
-            btn.disabled = true;
-        };
+        let isListening = false;
 
-        recognition.onspeechend = () => {
-            statusDiv.innerText = "Processing...";
-            recognition.stop();
-        };
-
-        recognition.onresult = (event) => {
-            const command = event.results[0][0].transcript.toLowerCase();
-            transDiv.innerText = `You said: "${command}"`;
-            
-            // --- SIMPLE LOGIC ---
-            if (command.includes("send email")) {
-                // Remove the trigger phrase "send email" to get the actual message
-                const messageContent = command.replace("send email", "").trim();
-                
-                if(messageContent.length > 0) {
-                    sendEmail(messageContent);
-                } else {
-                    speak("I heard the command, but the message was empty.");
-                    statusDiv.innerText = "Message empty.";
-                    btn.disabled = false;
-                }
+        window.toggleListening = function() {
+            if (isListening) {
+                recognition.stop(); 
             } else {
-                speak("I did not hear the send command.");
-                statusDiv.innerText = "Command not recognized.";
-                btn.disabled = false;
+                recognition.start();
             }
         };
 
-        // --- EMAIL SENDING FUNCTION ---
-        function sendEmail(message) {
-            statusDiv.innerText = "Sending email...";
-            speak("Sending email now.");
+        recognition.onstart = () => {
+            isListening = true;
+            micBtn.classList.add('listening');
+            statusDiv.innerText = "Listening...";
+            previewDiv.style.display = 'none'; // Hide previous result
+        };
 
-            const params = {
-                message: message,  // This matches {{message}} in your EmailJS template
-                to_name: "Myself"  // Optional: You can set this in EmailJS too
-            };
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('listening');
+            if (statusDiv.innerText === "Listening...") {
+                statusDiv.innerText = "Stopped.";
+            }
+        };
 
-            emailjs.send(SERVICE_ID, TEMPLATE_ID, params)
-                .then(function(response) {
-                    statusDiv.innerText = "✅ Email Sent Successfully!";
-                    speak("Email sent successfully.");
-                    btn.disabled = false;
-                }, function(error) {
-                    statusDiv.innerText = "❌ Failed: " + JSON.stringify(error);
-                    speak("Failed to send email.");
-                    btn.disabled = false;
-                });
+        recognition.onresult = async (event) => {
+            const userText = event.results[0][0].transcript;
+            transDiv.innerText = `You said: "${userText}"`;
+            statusDiv.innerText = "Thinking (Asking AI)... 🧠";
+            
+            // Send to AI
+            await processWithAI(userText);
+        };
+
+        // --- 3. THE BRAIN (AI LOGIC) ---
+        async function processWithAI(text) {
+            try {
+                // We give the AI a "Persona" and strict instructions to return JSON
+                const prompt = `
+                    You are a helpful email assistant. 
+                    Extract the following from this command: "${text}".
+                    
+                    Return ONLY a JSON object (no markdown, no extra text) with these keys:
+                    - "recipient": Who is it for? (Extract name).
+                    - "subject": A professional subject line based on the content.
+                    - "body": The email message, polite and professional.
+                    
+                    Example output format: {"recipient": "Mom", "subject": "Hello", "body": "Hi..."}
+                `;
+
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const aiText = response.text();
+
+                // Clean up the text just in case the AI adds ```json blocks
+                const cleanJson = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                // Parse and Display
+                const data = JSON.parse(cleanJson);
+                
+                document.getElementById('toDisplay').innerText = data.recipient;
+                document.getElementById('subDisplay').innerText = data.subject;
+                document.getElementById('bodyDisplay').innerText = data.body;
+                
+                previewDiv.style.display = 'block';
+                statusDiv.innerText = "Done!";
+                
+                // Speak confirmation
+                speak(`I prepared an email to ${data.recipient} with the subject ${data.subject}.`);
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = "Error: Could not understand.";
+                speak("I'm sorry, I got confused.");
+            }
         }
 
-        // --- TEXT TO SPEECH ---
         function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
             window.speechSynthesis.speak(utterance);
-        }
-
-        function startListening() {
-            try {
-                recognition.start();
-            } catch (e) {
-                alert("Browser not supported. Please use Chrome.");
-            }
         }
     </script>
 </body>
