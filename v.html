@@ -2,164 +2,119 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AI Voice Email (Mock)</title>
+    <title>Voice Gmail (Serverless)</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 40px; background-color: #f0f2f5; color: #333; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        h1 { margin-bottom: 10px; color: #4285F4; }
-        
-        /* The Listening Button */
-        #micBtn {
-            font-size: 3em; background: none; border: none; cursor: pointer;
-            transition: transform 0.2s; filter: grayscale(100%);
-        }
-        #micBtn:hover { transform: scale(1.1); }
-        #micBtn.listening { filter: grayscale(0%); animation: pulse 1.5s infinite; }
-        
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        /* Status & Output areas */
-        .status { margin: 20px 0; font-size: 1.1em; color: #666; height: 30px;}
-        .transcript { font-style: italic; color: #888; margin-bottom: 20px; min-height: 20px;}
-        
-        /* The "Faked" Email Display */
-        #emailPreview {
-            text-align: left; background: #fffde7; border: 1px solid #fdd835; 
-            padding: 20px; border-radius: 8px; display: none; margin-top: 20px;
-        }
-        .field { margin-bottom: 10px; }
-        .label { font-weight: bold; color: #555; width: 60px; display: inline-block;}
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f5f5f5; }
+        .card { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        button { font-size: 3em; border: none; background: none; cursor: pointer; transition: transform 0.2s; }
+        button:active { transform: scale(0.9); }
+        #status { margin: 15px; font-weight: bold; color: #555; }
+        .email-list { text-align: left; margin-top: 20px; font-size: 0.9em; }
+        .email-item { background: #e3f2fd; padding: 10px; margin-bottom: 8px; border-radius: 5px; }
     </style>
-
     <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
-        }
-      }
+      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
     </script>
 </head>
 <body>
 
     <div class="card">
-        <h1>🧠 AI Email Assistant</h1>
-        <p>Click the mic and say something like:<br>
-        <i>"Send an email to Sarah asking if the project is ready."</i></p>
+        <h1>☁️ Cloud Voice Email</h1>
+        <p>Say: "Read my unread emails" or "Send email to [email] saying hello"</p>
         
-        <button id="micBtn" onclick="toggleListening()">🎙️</button>
-        
-        <div class="status" id="status">Ready</div>
-        <div class="transcript" id="transcript"></div>
-
-        <div id="emailPreview">
-            <h3>✉️ Email Draft Generated</h3>
-            <div class="field"><span class="label">To:</span> <span id="toDisplay"></span></div>
-            <div class="field"><span class="label">Subject:</span> <span id="subDisplay"></span></div>
-            <div class="field"><span class="label">Body:</span> <span id="bodyDisplay"></span></div>
-            <hr>
-            <div style="text-align:right; font-size:0.8em; color:green;">✓ Simulated Send Success</div>
-        </div>
+        <button onclick="startAgent()">🎙️</button>
+        <div id="status">Tap mic to speak</div>
+        <div class="email-list" id="displayArea"></div>
     </div>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // --- 1. CONFIGURATION ---
-        // ⚠️ SECURITY WARNING: Never use this Key in a real public website. 
-        // It's okay for local testing, but anyone who views source can see it.
-        const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U"; 
+        // --- CONFIGURATION ---
+        /*
 
+        const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
+https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec
+*/
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec"; 
+        const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
+        
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        // --- 2. VOICE SETUP ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        const micBtn = document.getElementById('micBtn');
-        const statusDiv = document.getElementById('status');
-        const transDiv = document.getElementById('transcript');
-        const previewDiv = document.getElementById('emailPreview');
-
-        let isListening = false;
-
-        window.toggleListening = function() {
-            if (isListening) {
-                recognition.stop(); 
-            } else {
-                recognition.start();
-            }
-        };
-
-        recognition.onstart = () => {
-            isListening = true;
-            micBtn.classList.add('listening');
-            statusDiv.innerText = "Listening...";
-            previewDiv.style.display = 'none'; // Hide previous result
-        };
-
-        recognition.onend = () => {
-            isListening = false;
-            micBtn.classList.remove('listening');
-            if (statusDiv.innerText === "Listening...") {
-                statusDiv.innerText = "Stopped.";
-            }
-        };
-
-        recognition.onresult = async (event) => {
-            const userText = event.results[0][0].transcript;
-            transDiv.innerText = `You said: "${userText}"`;
-            statusDiv.innerText = "Thinking (Asking AI)... 🧠";
+        // --- 1. TOOL FUNCTIONS ---
+        async function listEmails() {
+            document.getElementById('status').innerText = "Fetching from Gmail...";
+            // We use the proxy URL to read
+            const response = await fetch(`${SCRIPT_URL}?action=read&q=is:unread`);
+            const emails = await response.json();
             
-            // Send to AI
-            await processWithAI(userText);
-        };
+            // Display visually
+            const display = document.getElementById('displayArea');
+            display.innerHTML = "";
+            emails.forEach(e => {
+                display.innerHTML += `<div class="email-item"><b>${e.from}</b>: ${e.subject}</div>`;
+            });
+            
+            return JSON.stringify(emails);
+        }
 
-        // --- 3. THE BRAIN (AI LOGIC) ---
-        async function processWithAI(text) {
-            try {
-                // We give the AI a "Persona" and strict instructions to return JSON
+        async function sendEmail(to, subject, body) {
+            document.getElementById('status').innerText = "Sending via Cloud...";
+            // Apps Script requires a specific POST format
+            // We use 'no-cors' mode or standard fetch depending on browser strictness. 
+            // Standard fetch usually works if "Anyone" access is set in Apps Script.
+            
+            const response = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ to, subject, body })
+            });
+            const result = await response.json();
+            return result.status;
+        }
+
+        // --- 2. AI LOGIC ---
+        window.startAgent = async () => {
+            const recognition = new webkitSpeechRecognition();
+            recognition.start();
+            document.getElementById('status').innerText = "Listening...";
+
+            recognition.onresult = async (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('status').innerText = "Thinking...";
+
+                // Prompt the AI to decide what to do
                 const prompt = `
-                    You are a helpful email assistant. 
-                    Extract the following from this command: "${text}".
+                    User Command: "${text}"
                     
-                    Return ONLY a JSON object (no markdown, no extra text) with these keys:
-                    - "recipient": Who is it for? (Extract name).
-                    - "subject": A professional subject line based on the content.
-                    - "body": The email message, polite and professional.
+                    You have two tools:
+                    1. READ: If user wants to check/read emails. Output JSON: {"tool": "read"}
+                    2. SEND: If user wants to send. Output JSON: {"tool": "send", "to": "email", "subject": "...", "body": "..."}
                     
-                    Example output format: {"recipient": "Mom", "subject": "Hello", "body": "Hi..."}
+                    Return ONLY JSON.
                 `;
 
                 const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const aiText = response.text();
+                const responseText = result.response.text().replace(/```json|```/g, '').trim();
+                const action = JSON.parse(responseText);
 
-                // Clean up the text just in case the AI adds ```json blocks
-                const cleanJson = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
-                
-                // Parse and Display
-                const data = JSON.parse(cleanJson);
-                
-                document.getElementById('toDisplay').innerText = data.recipient;
-                document.getElementById('subDisplay').innerText = data.subject;
-                document.getElementById('bodyDisplay').innerText = data.body;
-                
-                previewDiv.style.display = 'block';
-                statusDiv.innerText = "Done!";
-                
-                // Speak confirmation
-                speak(`I prepared an email to ${data.recipient} with the subject ${data.subject}.`);
-
-            } catch (error) {
-                console.error(error);
-                statusDiv.innerText = "Error: Could not understand.";
-                speak("I'm sorry, I got confused.");
-            }
-        }
+                if (action.tool === "read") {
+                    const emails = await listEmails();
+                    // Ask AI to summarize the emails naturally
+                    const summary = await model.generateContent(`Here are the user's emails: ${emails}. Summarize them for voice output.`);
+                    speak(summary.response.text());
+                } 
+                else if (action.tool === "send") {
+                    await sendEmail(action.to, action.subject, action.body);
+                    speak("Email sent successfully.");
+                    document.getElementById('status').innerText = "Sent!";
+                }
+            };
+        };
 
         function speak(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(utterance);
+            const u = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(u);
         }
     </script>
 </body>
