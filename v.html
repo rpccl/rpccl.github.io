@@ -1,0 +1,115 @@
+                        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JS Voice Email</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        button { padding: 15px 30px; font-size: 1.2em; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 5px; margin-top: 20px;}
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 20px; color: #555; font-weight: bold; }
+        #transcript { font-style: italic; color: #888; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🗣️ JS Voice Email</h1>
+        <p>Say: "Send email [your message]"</p>
+        
+        <div id="transcript">(Waiting for voice...)</div>
+        <div id="status"></div>
+        
+        <button id="talkBtn" onclick="startListening()">🎤 Start Speaking</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THESE WITH YOUR EMAILJS KEYS!
+        const SERVICE_ID = "YOUR_SERVICE_ID";
+        const TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+        const PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+
+        // Initialize EmailJS
+        emailjs.init(PUBLIC_KEY);
+
+        // --- VOICE RECOGNITION SETUP ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        const statusDiv = document.getElementById('status');
+        const transDiv = document.getElementById('transcript');
+        const btn = document.getElementById('talkBtn');
+
+        recognition.onstart = () => {
+            statusDiv.innerText = "Listening...";
+            btn.disabled = true;
+        };
+
+        recognition.onspeechend = () => {
+            statusDiv.innerText = "Processing...";
+            recognition.stop();
+        };
+
+        recognition.onresult = (event) => {
+            const command = event.results[0][0].transcript.toLowerCase();
+            transDiv.innerText = `You said: "${command}"`;
+            
+            // --- SIMPLE LOGIC ---
+            if (command.includes("send email")) {
+                // Remove the trigger phrase "send email" to get the actual message
+                const messageContent = command.replace("send email", "").trim();
+                
+                if(messageContent.length > 0) {
+                    sendEmail(messageContent);
+                } else {
+                    speak("I heard the command, but the message was empty.");
+                    statusDiv.innerText = "Message empty.";
+                    btn.disabled = false;
+                }
+            } else {
+                speak("I did not hear the send command.");
+                statusDiv.innerText = "Command not recognized.";
+                btn.disabled = false;
+            }
+        };
+
+        // --- EMAIL SENDING FUNCTION ---
+        function sendEmail(message) {
+            statusDiv.innerText = "Sending email...";
+            speak("Sending email now.");
+
+            const params = {
+                message: message,  // This matches {{message}} in your EmailJS template
+                to_name: "Myself"  // Optional: You can set this in EmailJS too
+            };
+
+            emailjs.send(SERVICE_ID, TEMPLATE_ID, params)
+                .then(function(response) {
+                    statusDiv.innerText = "✅ Email Sent Successfully!";
+                    speak("Email sent successfully.");
+                    btn.disabled = false;
+                }, function(error) {
+                    statusDiv.innerText = "❌ Failed: " + JSON.stringify(error);
+                    speak("Failed to send email.");
+                    btn.disabled = false;
+                });
+        }
+
+        // --- TEXT TO SPEECH ---
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function startListening() {
+            try {
+                recognition.start();
+            } catch (e) {
+                alert("Browser not supported. Please use Chrome.");
+            }
+        }
+    </script>
+</body>
+</html>

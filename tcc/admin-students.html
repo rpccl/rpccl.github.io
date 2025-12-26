@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students - Admin Panel</title>
+    <link rel="stylesheet" href="admin-style.css">
+    <style>
+        /* Small override for loading state */
+        .loading { color: #666; font-style: italic; }
+        .error-banner { 
+            background: #f8d7da; color: #721c24; padding: 10px; 
+            margin-bottom: 15px; border-radius: 4px; display: none; 
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>Admin Panel</h2>
+        <div>
+            <a href="admin-students.html" style="text-decoration: underline;">Students</a>
+            <a href="admin-exams.html">Exams</a>
+            <a href="admin-questions.html">Questions</a>
+            <a href="admin-results.html">Results</a>
+            <button onclick="logout()" class="btn btn-warning" style="margin-left: 20px;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Student Management</h1>
+        <div id="error-banner" class="error-banner"></div>
+
+        <div class="admin-form">
+            <h3>Add New Student</h3>
+            <form id="create-student-form">
+                <div class="form-group">
+                    <label>Roll No:</label>
+                    <input type="text" id="rollNo" required placeholder="e.g. TCC-001">
+                </div>
+                <div class="form-group">
+                    <label>Full Name:</label>
+                    <input type="text" id="name" required placeholder="e.g. Rahul Vaniya">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="text" id="password" required placeholder="Set initial password">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-create">Create Student</button>
+            </form>
+        </div>
+
+        <h3>Registered Students</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th style="width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="student-list">
+                <tr><td colspan="3" class="loading">Loading students...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = "http://localhost:3000/api"; 
+        const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
+
+        // --- AUTH CHECK ---
+        if (!ADMIN_TOKEN) {
+            alert("Unauthorized. Please login as Admin.");
+            window.location.href = 'admin-login.html';
+        }
+
+        // --- FUNCTIONS ---
+
+        // 1. Fetch List
+        async function fetchStudents() {
+            try {
+                const res = await fetch(`${API_URL}/students/list`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout(); // Token expired
+
+                const students = await res.json();
+                const tbody = document.getElementById('student-list');
+                tbody.innerHTML = '';
+
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3">No students found.</td></tr>';
+                    return;
+                }
+                
+                students.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${s.rollNo}</td>
+                            <td>${s.name}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="deleteStudent('${s._id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                showError("Failed to load students. Server might be down.");
+            }
+        }
+
+        // 2. Create Student
+        async function createStudent(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-create');
+            const errorBanner = document.getElementById('error-banner');
+            
+            // Reset UI
+            errorBanner.style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = "Creating...";
+
+            const rollNo = document.getElementById('rollNo').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            try {
+                const res = await fetch(`${API_URL}/students/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ADMIN_TOKEN}`
+                    },
+                    body: JSON.stringify({ rollNo, name, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Success
+                    document.getElementById('create-student-form').reset();
+                    fetchStudents(); // Refresh list
+                } else if (res.status === 401 || res.status === 403) {
+                    logout();
+                } else {
+                    // Validation Error (e.g. Duplicate Roll No)
+                    showError(data.error || "Failed to create student.");
+                }
+            } catch (err) {
+                showError("Network error. Check connection.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Create Student";
+            }
+        }
+
+        // 3. Delete Student
+        async function deleteStudent(id) {
+            if(!confirm('Are you sure you want to delete this student? Data cannot be recovered.')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/students/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                if (res.ok) {
+                    fetchStudents(); // Refresh list
+                } else {
+                    alert("Failed to delete student.");
+                }
+            } catch (err) {
+                alert("Network error.");
+            }
+        }
+
+        // --- UTILS ---
+
+        function logout() {
+            localStorage.removeItem('tcc_admin_token');
+            window.location.href = 'admin-login.html';
+        }
+
+        function showError(msg) {
+            const banner = document.getElementById('error-banner');
+            banner.innerText = msg;
+            banner.style.display = 'block';
+        }
+
+        // --- INIT ---
+        document.getElementById('create-student-form').addEventListener('submit', createStudent);
+        fetchStudents();
+
+    </script>
+</body>
+</html>

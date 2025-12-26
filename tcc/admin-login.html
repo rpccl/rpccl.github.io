@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Tanya Computer Center</title>
+    <style>
+        /* CSS Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; /* Fixes padding issues */
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #e74c3c; /* Red for Admin */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            background-color: #fadbd8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none; /* Hidden by default */
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h1>Admin Portal</h1>
+        <p>Restricted Access Only</p>
+        
+        <form id="admin-login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required placeholder="Enter admin username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Enter admin password">
+            </div>
+            
+            <button type="submit" id="btn-login">Login Securely</button>
+        </form>
+
+        <div id="error-display" class="error-msg" role="alert"></div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THIS with your actual Vercel Backend URL
+        const API_URL = "http://localhost:3000/api"; 
+
+        // --- LOGIC ---
+        const loginForm = document.getElementById('admin-login-form');
+        const errorDisplay = document.getElementById('error-display');
+        const loginBtn = document.getElementById('btn-login');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 1. Reset UI
+            errorDisplay.style.display = 'none';
+            loginBtn.disabled = true;
+            loginBtn.innerText = "Verifying...";
+
+            // 2. Get Data
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            try {
+                // 3. Send Request
+                const res = await fetch(`${API_URL}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // --- SUCCESS ---
+                    // Save the JWT Token specifically for Admin
+                    localStorage.setItem('tcc_admin_token', data.token);
+                    
+                    // Redirect to the Dashboard
+                    window.location.href = 'admin-students.html'; 
+                } else {
+                    // --- SERVER ERROR (e.g., Wrong Password) ---
+                    showError(data.error || "Login failed. Please check credentials.");
+                }
+
+            } catch (err) {
+                // --- NETWORK ERROR ---
+                console.error(err);
+                showError("Unable to connect to server. Check your internet.");
+            } finally {
+                // Reset Button
+                loginBtn.disabled = false;
+                loginBtn.innerText = "Login Securely";
+            }
+        });
+
+        function showError(msg) {
+            errorDisplay.innerText = msg;
+            errorDisplay.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
