@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Voice Gmail (Serverless)</title>
+    <title>Voice Gmail new (Serverless)</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f5f5f5; }
         .card { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -40,7 +40,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6
         const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
         
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         // --- 1. TOOL FUNCTIONS ---
         async function listEmails() {
