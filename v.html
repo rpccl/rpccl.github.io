@@ -2,15 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Voice Gmail new (Serverless)</title>
+    <title>Gemini 2.0 Lite Voice Agent</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f5f5f5; }
-        .card { background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        button { font-size: 3em; border: none; background: none; cursor: pointer; transition: transform 0.2s; }
-        button:active { transform: scale(0.9); }
-        #status { margin: 15px; font-weight: bold; color: #555; }
-        .email-list { text-align: left; margin-top: 20px; font-size: 0.9em; }
-        .email-item { background: #e3f2fd; padding: 10px; margin-bottom: 8px; border-radius: 5px; }
+        body { font-family: 'Inter', sans-serif; background: #0f0f12; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        
+        /* The "Thinking" Orb */
+        .orb {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4285f4, #000);
+            box-shadow: 0 0 30px rgba(66, 133, 244, 0.4);
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        .orb.listening { 
+            background: radial-gradient(circle at 30% 30%, #34a853, #000);
+            box-shadow: 0 0 50px #34a853; 
+            animation: breathe 2s infinite ease-in-out;
+        }
+        .orb.processing { 
+            background: radial-gradient(circle at 30% 30%, #fbbc05, #000);
+            box-shadow: 0 0 50px #fbbc05; 
+            animation: spin 1s infinite linear;
+        }
+        .orb.speaking { 
+            background: radial-gradient(circle at 30% 30%, #ea4335, #000);
+            box-shadow: 0 0 60px #ea4335;
+            transform: scale(1.1);
+        }
+
+        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .status { font-size: 1.2rem; font-weight: 500; margin-bottom: 10px; color: #888; }
+        .transcript { font-size: 0.9rem; color: #555; max-width: 80%; text-align: center; min-height: 1.2em;}
+        
+        button {
+            margin-top: 30px; padding: 12px 30px; font-size: 1rem; border: none; border-radius: 25px;
+            background: #222; color: #fff; cursor: pointer; border: 1px solid #333; transition: 0.2s;
+        }
+        button:hover { background: #333; border-color: #555; }
     </style>
     <script type="importmap">
       { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
@@ -18,103 +48,194 @@
 </head>
 <body>
 
-    <div class="card">
-        <h1>☁️ Cloud Voice Email</h1>
-        <p>Say: "Read my unread emails" or "Send email to [email] saying hello"</p>
-        
-        <button onclick="startAgent()">🎙️</button>
-        <div id="status">Tap mic to speak</div>
-        <div class="email-list" id="displayArea"></div>
-    </div>
+    <div class="orb" id="orb"></div>
+    <div class="status" id="status">Inactive</div>
+    <div class="transcript" id="transcript"></div>
+    
+    <button id="startBtn" onclick="startSystem()">Initialize System</button>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // --- CONFIGURATION ---
-        /*
-
+        // --- CONFIG ---
+       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec"; 
         const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
-https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec
-*/
+        
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec"; 
         const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
         
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwDsIfTo6kViXw3w03m6GRdz6ke21bFTRg986xdEtXjcH3AYcNB-jMxDltjyxrqM6cN/exec"; 
+        const API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
+        
+ // We use the "Lite" model which is Free + Multimodal (Audio)
+        const MODEL_NAME = "gemini-2.0-flash-lite-001"; 
+
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-        // --- 1. TOOL FUNCTIONS ---
-        async function listEmails() {
-            document.getElementById('status').innerText = "Fetching from Gmail...";
-            // We use the proxy URL to read
-            const response = await fetch(`${SCRIPT_URL}?action=read&q=is:unread`);
-            const emails = await response.json();
-            
-            // Display visually
-            const display = document.getElementById('displayArea');
-            display.innerHTML = "";
-            emails.forEach(e => {
-                display.innerHTML += `<div class="email-item"><b>${e.from}</b>: ${e.subject}</div>`;
-            });
-            
-            return JSON.stringify(emails);
-        }
+        // --- AUDIO VARIABLES ---
+        let audioContext, mediaRecorder, analyser, dataArray;
+        let chunks = [];
+        let isActive = false;     // Is the system On?
+        let isRecording = false;  // Are we currently saving audio?
+        let isProcessing = false; // Is AI thinking/speaking?
+        let silenceStart = Date.now();
+        
+        // VAD (Voice Activity Detection) Settings
+        const NOISE_THRESHOLD = 25;  // Adjust if your room is noisy
+        const SILENCE_DURATION = 1200; // Wait 1.2s of silence before sending
 
-        async function sendEmail(to, subject, body) {
-            document.getElementById('status').innerText = "Sending via Cloud...";
-            // Apps Script requires a specific POST format
-            // We use 'no-cors' mode or standard fetch depending on browser strictness. 
-            // Standard fetch usually works if "Anyone" access is set in Apps Script.
-            
-            const response = await fetch(SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify({ to, subject, body })
-            });
-            const result = await response.json();
-            return result.status;
-        }
+        window.startSystem = async () => {
+            if (isActive) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Setup Analysis (Listening for volume)
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512;
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        // --- 2. AI LOGIC ---
-        window.startAgent = async () => {
-            const recognition = new webkitSpeechRecognition();
-            recognition.start();
-            document.getElementById('status').innerText = "Listening...";
+                // Setup Recording
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                mediaRecorder.onstop = processAudio;
 
-            recognition.onresult = async (event) => {
-                const text = event.results[0][0].transcript;
-                document.getElementById('status').innerText = "Thinking...";
+                isActive = true;
+                document.getElementById('startBtn').style.display = 'none';
+                updateState("listening", "Listening...");
+                detectVoice(); // Start the loop
 
-                // Prompt the AI to decide what to do
-                const prompt = `
-                    User Command: "${text}"
-                    
-                    You have two tools:
-                    1. READ: If user wants to check/read emails. Output JSON: {"tool": "read"}
-                    2. SEND: If user wants to send. Output JSON: {"tool": "send", "to": "email", "subject": "...", "body": "..."}
-                    
-                    Return ONLY JSON.
-                `;
-
-                const result = await model.generateContent(prompt);
-                const responseText = result.response.text().replace(/```json|```/g, '').trim();
-                const action = JSON.parse(responseText);
-
-                if (action.tool === "read") {
-                    const emails = await listEmails();
-                    // Ask AI to summarize the emails naturally
-                    const summary = await model.generateContent(`Here are the user's emails: ${emails}. Summarize them for voice output.`);
-                    speak(summary.response.text());
-                } 
-                else if (action.tool === "send") {
-                    await sendEmail(action.to, action.subject, action.body);
-                    speak("Email sent successfully.");
-                    document.getElementById('status').innerText = "Sent!";
-                }
-            };
+            } catch (err) {
+                alert("Microphone Error: " + err.message);
+            }
         };
 
+        function detectVoice() {
+            if (!isActive) return;
+            requestAnimationFrame(detectVoice);
+            
+            // Don't listen while AI is talking/thinking
+            if (isProcessing) return; 
+
+            analyser.getByteFrequencyData(dataArray);
+            const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+            if (volume > NOISE_THRESHOLD) {
+                silenceStart = Date.now();
+                if (!isRecording) {
+                    isRecording = true;
+                    chunks = [];
+                    mediaRecorder.start();
+                    updateState("listening", "I hear you...");
+                }
+            } else {
+                // Silence detected
+                if (isRecording && (Date.now() - silenceStart > SILENCE_DURATION)) {
+                    isRecording = false;
+                    mediaRecorder.stop(); // Triggers onstop -> processAudio
+                }
+            }
+        }
+
+        async function processAudio() {
+            if (chunks.length === 0) return;
+            
+            // Filter short noise bursts (< 0.5s)
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            if (audioBlob.size < 3000) return; 
+
+            updateState("processing", "Thinking...");
+            isProcessing = true; // Lock the loop
+
+            const base64Audio = await blobToBase64(audioBlob);
+
+            try {
+                // 1. Define the Tools for the AI
+                const prompt = `
+                    You are a helpful email assistant. Listen to this audio.
+                    
+                    Available Tools (Return strictly JSON):
+                    - {"tool": "read"} -> If user asks to check/read emails.
+                    - {"tool": "send", "to": "...", "subject": "...", "body": "..."} -> If user wants to send email.
+                    - {"tool": "chat", "response": "..."} -> Normal conversation.
+                    
+                    Return ONLY the JSON object.
+                `;
+
+                // 2. Send Audio to Gemini 2.0 Lite
+                const result = await model.generateContent([
+                    prompt,
+                    { inlineData: { mimeType: "audio/webm", data: base64Audio } }
+                ]);
+
+                const text = result.response.text();
+                const jsonStr = text.replace(/```json|```/g, '').trim();
+                const action = JSON.parse(jsonStr);
+
+                await executeAction(action);
+
+            } catch (e) {
+                console.error(e);
+                updateState("listening", "Error. Try again.");
+                speak("I didn't catch that.");
+            }
+            
+            isProcessing = false; // Unlock
+            updateState("listening", "Listening...");
+        }
+
+        async function executeAction(action) {
+            document.getElementById('transcript').innerText = `Action: ${action.tool}`;
+            
+            if (action.tool === "chat") {
+                await speak(action.response);
+            } 
+            else if (action.tool === "read") {
+                await speak("Checking your inbox...");
+                const res = await fetch(`${APPS_SCRIPT_URL}?action=read`);
+                const emails = await res.json();
+                
+                // Quick summary logic
+                const summary = emails.length > 0 
+                    ? `You have ${emails.length} emails. The latest is from ${emails[0].from} about ${emails[0].subject}.`
+                    : "You have no new emails.";
+                
+                await speak(summary);
+            }
+            else if (action.tool === "send") {
+                await speak(`Sending email to ${action.to}`);
+                await fetch(APPS_SCRIPT_URL, {
+                    method: "POST", 
+                    body: JSON.stringify(action)
+                });
+                await speak("Email sent successfully.");
+            }
+        }
+
         function speak(text) {
-            const u = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(u);
+            return new Promise(resolve => {
+                updateState("speaking", "Speaking...");
+                const u = new SpeechSynthesisUtterance(text);
+                u.onend = resolve;
+                window.speechSynthesis.speak(u);
+            });
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function updateState(visualClass, text) {
+            const orb = document.getElementById('orb');
+            orb.className = "orb " + visualClass;
+            document.getElementById('status').innerText = text;
         }
     </script>
 </body>
