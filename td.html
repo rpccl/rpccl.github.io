@@ -1,26 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Voice Math Practice App</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Voice Math Practice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
   padding: 20px;
 }
-h1 { margin-top: 0; }
-label { display: block; margin-top: 10px; }
+label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
 select, input, button {
   padding: 8px;
-  margin-top: 5px;
   width: 100%;
   max-width: 400px;
+  margin-top: 4px;
 }
 #question {
   margin-top: 20px;
-  font-size: 1.5em;
+  font-size: 1.6em;
   font-weight: bold;
 }
 #feedback {
@@ -34,7 +37,7 @@ select, input, button {
 
 <h1>Voice Math Practice</h1>
 
-<label>Category</label>
+<label for="category">Category</label>
 <select id="category">
   <option value="random">Random</option>
   <option value="add">Addition</option>
@@ -46,37 +49,44 @@ select, input, button {
   <option value="pl">Profit & Loss</option>
 </select>
 
-<label>Number Range (min – max)</label>
-<input type="number" id="min" value="1" />
-<input type="number" id="max" value="10" />
+<label for="min">Minimum Number</label>
+<input type="number" id="min" value="1">
 
-<label>Time (minutes)</label>
-<input type="number" id="time" value="1" />
+<label for="max">Maximum Number</label>
+<input type="number" id="max" value="10">
+
+<label for="time">Time (minutes)</label>
+<input type="number" id="time" value="1">
 
 <button id="startBtn">Start</button>
 
 <div id="question"></div>
 <div id="feedback"></div>
 
-<input type="text" id="answerInput" placeholder="Type answer and press Enter" class="hidden" />
+<label for="answerInput" class="hidden" id="answerLabel">Your Answer</label>
+<input type="text" id="answerInput" class="hidden">
 
 <script>
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
-recognition.continuous = true;
+
 recognition.lang = 'en-US';
+recognition.continuous = true;
+recognition.interimResults = false;
 
 let correctAnswer = null;
 let endTime = null;
-let listening = false;
+let isRunning = false;
 
 const questionDiv = document.getElementById('question');
 const feedbackDiv = document.getElementById('feedback');
 const answerInput = document.getElementById('answerInput');
+const answerLabel = document.getElementById('answerLabel');
 
 function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  window.speechSynthesis.speak(msg);
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  window.speechSynthesis.speak(u);
 }
 
 function rand(min, max) {
@@ -90,7 +100,7 @@ function generateQuestion() {
     return;
   }
 
-  const catSel = document.getElementById('category').value;
+  const catSel = category.value;
   const min = Number(document.getElementById('min').value);
   const max = Number(document.getElementById('max').value);
 
@@ -98,55 +108,68 @@ function generateQuestion() {
     ? ['add','sub','mul','div','rem','avg','pl'][rand(0,6)]
     : catSel;
 
-  let a, b, qText;
+  let a, b, q;
 
   switch (cat) {
     case 'add':
       a = rand(min,max); b = rand(min,max);
       correctAnswer = a + b;
-      qText = `${a} plus ${b}`;
+      q = `${a} plus ${b}`;
       break;
     case 'sub':
       a = rand(min,max); b = rand(min,max);
       correctAnswer = a - b;
-      qText = `${a} minus ${b}`;
+      q = `${a} minus ${b}`;
       break;
     case 'mul':
       a = rand(min,max); b = rand(min,max);
       correctAnswer = a * b;
-      qText = `${a} multiplied by ${b}`;
+      q = `${a} multiplied by ${b}`;
       break;
     case 'div':
       b = rand(min,max);
       correctAnswer = rand(min,max);
       a = b * correctAnswer;
-      qText = `${a} divided by ${b}`;
+      q = `${a} divided by ${b}`;
       break;
     case 'rem':
       b = rand(min,max);
-      correctAnswer = rand(0,b-1);
+      correctAnswer = rand(0, b - 1);
       a = rand(min,max) * b + correctAnswer;
-      qText = `remainder when ${a} is divided by ${b}`;
+      q = `remainder when ${a} is divided by ${b}`;
       break;
     case 'avg':
       a = rand(min,max); b = rand(min,max);
       correctAnswer = (a + b) / 2;
-      qText = `average of ${a} and ${b}`;
+      q = `average of ${a} and ${b}`;
       break;
     case 'pl':
-      a = rand(min,max);
-      b = rand(min,max);
+      a = rand(min,max); b = rand(min,max);
       correctAnswer = b - a;
-      qText = `profit if cost price is ${a} and selling price is ${b}`;
+      q = `profit if cost price is ${a} and selling price is ${b}`;
       break;
   }
 
-  questionDiv.textContent = "Question: " + qText;
+  questionDiv.textContent = "Question: " + q;
   feedbackDiv.textContent = "";
-  speak(qText);
+  speak(q);
+}
+
+function normalizeSpeech(text) {
+  text = text.toLowerCase();
+  text = text.replace(/minus\s+/g, '-');
+  text = text.replace(/negative\s+/g, '-');
+  return text;
+}
+
+function extractNumber(text) {
+  const m = text.match(/-?\d+(\.\d+)?/);
+  return m ? Number(m[0]) : null;
 }
 
 function checkAnswer(ans) {
+  if (ans === null) return;
+
   if (Number(ans) === Number(correctAnswer)) {
     feedbackDiv.textContent = "Correct";
     speak("Correct");
@@ -154,30 +177,40 @@ function checkAnswer(ans) {
     feedbackDiv.textContent = "Wrong. Correct answer is " + correctAnswer;
     speak("Wrong. Correct answer is " + correctAnswer);
   }
-  setTimeout(generateQuestion, 800);
+  setTimeout(generateQuestion, 900);
 }
 
 recognition.onresult = (e) => {
-  const transcript = e.results[e.results.length - 1][0].transcript.trim();
-  const num = transcript.match(/-?\d+(\.\d+)?/);
-  if (num) checkAnswer(num[0]);
+  const raw = e.results[e.results.length - 1][0].transcript;
+  const normalized = normalizeSpeech(raw);
+  const value = extractNumber(normalized);
+  checkAnswer(value);
+};
+
+recognition.onerror = () => {
+  if (isRunning) recognition.start();
+};
+
+recognition.onend = () => {
+  if (isRunning) recognition.start();
 };
 
 answerInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
-    checkAnswer(answerInput.value);
+    const val = Number(answerInput.value);
     answerInput.value = '';
+    checkAnswer(val);
   }
 });
 
 document.getElementById('startBtn').onclick = () => {
-  endTime = Date.now() + Number(document.getElementById('time').value) * 60000;
+  endTime = Date.now() + Number(time.value) * 60000;
+  isRunning = true;
   answerInput.classList.remove('hidden');
+  answerLabel.classList.remove('hidden');
+  answerInput.focus();
   generateQuestion();
-  if (!listening) {
-    recognition.start();
-    listening = true;
-  }
+  recognition.start();
 };
 </script>
 
