@@ -1,151 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>AI Voice Todo (Gemini)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Voice Controlled Todo App</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 6px 0; }
+  </style>
 </head>
 <body>
 
-<h1>AI Voice Todo</h1>
-<button id="listen">🎤 Speak</button>
-<div id="status" aria-live="polite"></div>
+  <h1>Voice Controlled Todo App</h1>
+  <button id="listenBtn">Start Voice Command</button>
+  <p id="transcript"></p>
+  <ul id="todoList"></ul>
 
 <script>
-/* ================= CONFIG ================= */
-const GEMINI_API_KEY = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";
-const GEMINI_MODEL = "gemini-1.5-flash";
-
-/* ================= STORAGE ================= */
-const STORAGE_KEY = "ai_todos";
-
-function loadTodos() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+// ——— LOCAL STORAGE ——————————————
+function loadTodos(){
+  return JSON.parse(localStorage.getItem("todos") || "[]");
 }
-
-function saveTodos(todos) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+function saveTodos(t){
+  localStorage.setItem("todos", JSON.stringify(t));
 }
-
-/* ================= SPEECH ================= */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
-recognition.lang = "en-IN";
-recognition.interimResults = false;
-
-function speak(text) {
-  speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-  document.getElementById("status").innerText = text;
+function render(){
+  const list = document.getElementById("todoList");
+  list.innerHTML = "";
+  loadTodos().forEach((td,i)=>{
+    const li = document.createElement("li");
+    li.textContent = td.text;
+    list.appendChild(li);
+  });
 }
+render();
 
-/* ================= GEMINI CALL ================= */
-async function callGemini(command, todos) {
+// ——— VOICE RECOGNITION —————————————
+const listenBtn = document.getElementById("listenBtn");
+const transcriptEl = document.getElementById("transcript");
+
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recog = new Recognition();
+recog.lang = "en-US";
+
+listenBtn.onclick = () => recog.start();
+
+recog.onresult = async (e) => {
+  const text = e.results[0][0].transcript;
+  transcriptEl.innerText = "You said: " + text;
+
+  const json = await getTodosFromAI(text);
+  if(json) handleJSON(json);
+  render();
+};
+
+// ——— GEMINI API CALL ——————————————
+async function getTodosFromAI(text){
+  const key = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";  // 🔑 Put your key
   const prompt = `
-You are a todo control engine.
+You will be given a voice command about todos.
+Respond only with valid JSON with keys:
+create: [], update: [{old, new}], delete: [].
+Do NOT add any explanation.
 
-Your response will be EXECUTED by the application.
-Return ONLY valid JSON.
-DO NOT add explanations, comments, or markdown.
-
-User command:
-"${command}"
-
-Current todos:
-${JSON.stringify(todos)}
-
-Return JSON EXACTLY in this format:
-{
-  "actions": [
-    {
-      "intent": "create|read|update|delete",
-      "text": "task text or empty string",
-      "done": true|false|null
-    }
-  ]
-}
+Voice command:
+"${text}"
 `;
 
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-      GEMINI_MODEL +
-      ":generateContent?key=" +
-      GEMINI_API_KEY,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0 }
-      })
-    }
-  );
+  // free text model
+  const model = "gemini-2.0-flash";
 
-  const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text.trim();
-  return JSON.parse(text);
+  const body = {
+    model,
+    input: prompt,
+  };
+
+  try {
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta2/models:generateText?key=" + key,
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      }
+    );
+    const data = await r.json();
+    const out = data.output?.text || "";
+    return JSON.parse(out);
+  } catch(err){
+    console.error("AI Error", err);
+    return null;
+  }
 }
 
-/* ================= ACTION ENGINE ================= */
-function applyActions(actions) {
-  let todos = loadTodos();
+// ——— HANDLE JSON —————————————
+function handleJSON(j){
+  const todos = loadTodos();
 
-  actions.forEach(a => {
-    if (a.intent === "create" && a.text) {
-      todos.push({ text: a.text, done: false });
-    }
-
-    if (a.intent === "update" && a.text) {
-      todos.forEach(t => {
-        if (t.text.toLowerCase().includes(a.text.toLowerCase())) {
-          if (a.done !== null) t.done = a.done;
-        }
-      });
-    }
-
-    if (a.intent === "delete" && a.text) {
-      todos = todos.filter(
-        t => !t.text.toLowerCase().includes(a.text.toLowerCase())
-      );
-    }
-
-    if (a.intent === "read") {
-      const pending = todos.filter(t => !t.done);
-      if (pending.length === 0) {
-        speak("You have no pending tasks.");
-      } else {
-        speak(
-          pending
-            .map((t, i) => `${i + 1}. ${t.text}`)
-            .join(". ")
-        );
-      }
-    }
-  });
+  if(j.create){
+    j.create.forEach(t => todos.push({ text: t }));
+  }
+  if(j.update){
+    j.update.forEach(u => {
+      const idx = todos.findIndex(td => td.text.toLowerCase().includes(u.old.toLowerCase()));
+      if(idx >= 0) todos[idx].text = u.new;
+    });
+  }
+  if(j.delete){
+    j.delete.forEach(d => {
+      const idx = todos.findIndex(td => td.text.toLowerCase().includes(d.toLowerCase()));
+      if(idx >= 0) todos.splice(idx,1);
+    });
+  }
 
   saveTodos(todos);
 }
 
-/* ================= CONTROLLER ================= */
-recognition.onresult = async e => {
-  const spoken = e.results[0][0].transcript;
-  speak("Processing");
-
-  try {
-    const todos = loadTodos();
-    const aiResult = await callGemini(spoken, todos);
-    applyActions(aiResult.actions);
-    speak("Done");
-  } catch (err) {
-    speak("I could not understand that command.");
-  }
-};
-
-document.getElementById("listen").onclick = () => {
-  recognition.start();
-  document.getElementById("status").innerText = "Listening…";
-};
 </script>
-
 </body>
 </html>
