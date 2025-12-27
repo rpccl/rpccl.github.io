@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offline AI Voice Todo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+<h1>Offline AI Voice Todo</h1>
+
+<button id="start">🎤 Speak</button>
+<div id="status" aria-live="polite"></div>
+
+<script type="module">
+/* ================= AI ENGINE ================= */
+import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
+const engine = await CreateMLCEngine(
+  "mistral-7b-instruct-v0.2-q4f16_1",
+  {
+    initProgressCallback: p =>
+      status(`Loading AI model: ${Math.round(p.progress * 100)}%`)
+  }
+);
+
+status("AI ready. Speak now.");
+
+/* ================= STORAGE ================= */
+const KEY = "ai_todos";
+const loadTodos = () => JSON.parse(localStorage.getItem(KEY)) || [];
+const saveTodos = t => localStorage.setItem(KEY, JSON.stringify(t));
+
+/* ================= SPEECH ================= */
+const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const rec = new Rec();
+rec.lang = "en-IN";
+
+function speak(text) {
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  status(text);
+}
+
+function status(t) {
+  document.getElementById("status").innerText = t;
+}
+
+/* ================= AI PROMPT ================= */
+async function runAI(command, todos) {
+  const prompt = `
+You are a todo assistant.
+
+User command:
+"${command}"
+
+Existing todos:
+${JSON.stringify(todos)}
+
+Return ONLY valid JSON:
+{
+  "actions": [
+    {
+      "intent": "create|read|update|delete",
+      "text": "task text",
+      "status": "done|pending|null"
+    }
+  ]
+}
+`;
+
+  const res = await engine.chat.completions.create({
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0
+  });
+
+  return JSON.parse(res.choices[0].message.content);
+}
+
+/* ================= ACTIONS ================= */
+function apply(actions) {
+  let todos = loadTodos();
+
+  actions.forEach(a => {
+    if (a.intent === "create") {
+      todos.push({ text: a.text, done: false });
+    }
+
+    if (a.intent === "update") {
+      todos.forEach(t => {
+        if (t.text.toLowerCase().includes(a.text.toLowerCase()))
+          t.done = true;
+      });
+    }
+
+    if (a.intent === "delete") {
+      todos = todos.filter(t =>
+        !t.text.toLowerCase().includes(a.text.toLowerCase())
+      );
+    }
+
+    if (a.intent === "read") {
+      if (!todos.length) speak("You have no tasks.");
+      else speak(
+        todos
+          .filter(t => !t.done)
+          .map((t, i) => `${i + 1}. ${t.text}`)
+          .join(". ")
+      );
+    }
+  });
+
+  saveTodos(todos);
+}
+
+/* ================= CONTROLLER ================= */
+rec.onresult = async e => {
+  const spoken = e.results[0][0].transcript;
+  speak("Thinking");
+
+  try {
+    const todos = loadTodos();
+    const ai = await runAI(spoken, todos);
+    apply(ai.actions);
+    speak("Done");
+  } catch (e) {
+    speak("I could not understand that.");
+  }
+};
+
+document.getElementById("start").onclick = () => rec.start();
+</script>
+
+</body>
+</html>
