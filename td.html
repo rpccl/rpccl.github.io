@@ -8,7 +8,7 @@
 <style>
 body {
   font-family: sans-serif;
-  max-width: 700px;
+  max-width: 720px;
   margin: auto;
   padding: 1rem;
 }
@@ -31,11 +31,11 @@ li {
 <h1>AI Voice Todo App</h1>
 
 <button id="voiceBtn">🎤 Speak</button>
-<p id="status" aria-live="polite">Loading AI…</p>
+<p id="status" aria-live="polite">Loading AI model…</p>
 
 <hr>
 
-<h2>Add Todo Manually</h2>
+<h2>Manual Todo</h2>
 <input id="manualText" placeholder="Enter task">
 <button onclick="addManual()">Add</button>
 
@@ -51,7 +51,7 @@ import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 const statusEl = document.getElementById("status");
 
 const engine = await CreateMLCEngine(
-  "Llama-3-8B-Instruct-q4f16_1",
+  "Phi-3-mini-4k-instruct-q4f16_1",
   {
     initProgressCallback: p => {
       statusEl.innerText =
@@ -63,7 +63,7 @@ const engine = await CreateMLCEngine(
 statusEl.innerText = "AI ready. You can speak now.";
 
 /* ================= STORAGE ================= */
-const KEY = "todos-ai";
+const KEY = "ai_todos";
 
 function loadTodos() {
   return JSON.parse(localStorage.getItem(KEY)) || [];
@@ -122,7 +122,7 @@ window.addManual = () => {
   input.value = "";
 };
 
-/* ================= AI PROMPT ================= */
+/* ================= AI ================= */
 async function askAI(command) {
   const prompt = `
 You are a todo assistant.
@@ -133,7 +133,7 @@ User command:
 Existing todos:
 ${JSON.stringify(loadTodos())}
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
 {
   "actions": [
     {
@@ -152,7 +152,7 @@ Return ONLY valid JSON in this exact format:
   return JSON.parse(res.choices[0].message.content);
 }
 
-/* ================= APPLY ACTIONS ================= */
+/* ================= APPLY ================= */
 function applyActions(actions) {
   let todos = loadTodos();
 
@@ -188,7 +188,7 @@ function applyActions(actions) {
   saveTodos(todos);
 }
 
-/* ================= VOICE CONTROLLER ================= */
+/* ================= VOICE ================= */
 rec.onresult = async e => {
   const spoken = e.results[0][0].transcript;
   speak("Thinking");
