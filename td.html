@@ -2,34 +2,77 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Offline AI Voice Todo</title>
+<title>AI Voice Todo App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: sans-serif;
+  max-width: 700px;
+  margin: auto;
+  padding: 1rem;
+}
+button, input {
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+li {
+  margin: 0.4rem 0;
+}
+.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+</style>
 </head>
 
 <body>
-<h1>Offline AI Voice Todo</h1>
 
-<button id="start">🎤 Speak</button>
-<div id="status" aria-live="polite"></div>
+<h1>AI Voice Todo App</h1>
+
+<button id="voiceBtn">🎤 Speak</button>
+<p id="status" aria-live="polite">Loading AI…</p>
+
+<hr>
+
+<h2>Add Todo Manually</h2>
+<input id="manualText" placeholder="Enter task">
+<button onclick="addManual()">Add</button>
+
+<hr>
+
+<h2>Your Todos</h2>
+<ul id="todoList"></ul>
 
 <script type="module">
 /* ================= AI ENGINE ================= */
 import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
+const statusEl = document.getElementById("status");
+
 const engine = await CreateMLCEngine(
-  "mistral-7b-instruct-v0.2-q4f16_1",
+  "Llama-3-8B-Instruct-q4f16_1",
   {
-    initProgressCallback: p =>
-      status(`Loading AI model: ${Math.round(p.progress * 100)}%`)
+    initProgressCallback: p => {
+      statusEl.innerText =
+        "Loading AI model: " + Math.round(p.progress * 100) + "%";
+    }
   }
 );
 
-status("AI ready. Speak now.");
+statusEl.innerText = "AI ready. You can speak now.";
 
 /* ================= STORAGE ================= */
-const KEY = "ai_todos";
-const loadTodos = () => JSON.parse(localStorage.getItem(KEY)) || [];
-const saveTodos = t => localStorage.setItem(KEY, JSON.stringify(t));
+const KEY = "todos-ai";
+
+function loadTodos() {
+  return JSON.parse(localStorage.getItem(KEY)) || [];
+}
+
+function saveTodos(todos) {
+  localStorage.setItem(KEY, JSON.stringify(todos));
+  render();
+}
 
 /* ================= SPEECH ================= */
 const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -38,15 +81,49 @@ rec.lang = "en-IN";
 
 function speak(text) {
   speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-  status(text);
+  statusEl.innerText = text;
 }
 
-function status(t) {
-  document.getElementById("status").innerText = t;
+/* ================= UI ================= */
+function render() {
+  const list = document.getElementById("todoList");
+  list.innerHTML = "";
+  loadTodos().forEach((t, i) => {
+    const li = document.createElement("li");
+    li.className = t.done ? "done" : "";
+    li.innerHTML = `
+      <input type="checkbox" ${t.done ? "checked" : ""} 
+        onchange="toggle(${i})">
+      ${t.text}
+      <button onclick="removeTodo(${i})">❌</button>
+    `;
+    list.appendChild(li);
+  });
 }
+
+window.toggle = i => {
+  const todos = loadTodos();
+  todos[i].done = !todos[i].done;
+  saveTodos(todos);
+};
+
+window.removeTodo = i => {
+  const todos = loadTodos();
+  todos.splice(i, 1);
+  saveTodos(todos);
+};
+
+window.addManual = () => {
+  const input = document.getElementById("manualText");
+  if (!input.value.trim()) return;
+  const todos = loadTodos();
+  todos.push({ text: input.value.trim(), done: false });
+  saveTodos(todos);
+  input.value = "";
+};
 
 /* ================= AI PROMPT ================= */
-async function runAI(command, todos) {
+async function askAI(command) {
   const prompt = `
 You are a todo assistant.
 
@@ -54,15 +131,14 @@ User command:
 "${command}"
 
 Existing todos:
-${JSON.stringify(todos)}
+${JSON.stringify(loadTodos())}
 
-Return ONLY valid JSON:
+Return ONLY valid JSON in this exact format:
 {
   "actions": [
     {
       "intent": "create|read|update|delete",
-      "text": "task text",
-      "status": "done|pending|null"
+      "text": "task text"
     }
   ]
 }
@@ -76,8 +152,8 @@ Return ONLY valid JSON:
   return JSON.parse(res.choices[0].message.content);
 }
 
-/* ================= ACTIONS ================= */
-function apply(actions) {
+/* ================= APPLY ACTIONS ================= */
+function applyActions(actions) {
   let todos = loadTodos();
 
   actions.forEach(a => {
@@ -93,8 +169,8 @@ function apply(actions) {
     }
 
     if (a.intent === "delete") {
-      todos = todos.filter(t =>
-        !t.text.toLowerCase().includes(a.text.toLowerCase())
+      todos = todos.filter(
+        t => !t.text.toLowerCase().includes(a.text.toLowerCase())
       );
     }
 
@@ -112,22 +188,24 @@ function apply(actions) {
   saveTodos(todos);
 }
 
-/* ================= CONTROLLER ================= */
+/* ================= VOICE CONTROLLER ================= */
 rec.onresult = async e => {
   const spoken = e.results[0][0].transcript;
   speak("Thinking");
 
   try {
-    const todos = loadTodos();
-    const ai = await runAI(spoken, todos);
-    apply(ai.actions);
+    const ai = await askAI(spoken);
+    applyActions(ai.actions);
     speak("Done");
-  } catch (e) {
-    speak("I could not understand that.");
+  } catch {
+    speak("Sorry, I could not understand.");
   }
 };
 
-document.getElementById("start").onclick = () => rec.start();
+document.getElementById("voiceBtn").onclick = () => rec.start();
+
+/* ================= INIT ================= */
+render();
 </script>
 
 </body>
