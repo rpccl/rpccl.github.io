@@ -1,121 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Voice Controlled Todo App</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 6px 0; }
-  </style>
+<meta charset="UTF-8" />
+<title>Voice Math Practice App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  padding: 20px;
+}
+h1 { margin-top: 0; }
+label { display: block; margin-top: 10px; }
+select, input, button {
+  padding: 8px;
+  margin-top: 5px;
+  width: 100%;
+  max-width: 400px;
+}
+#question {
+  margin-top: 20px;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+#feedback {
+  margin-top: 10px;
+  font-size: 1.2em;
+}
+.hidden { display: none; }
+</style>
 </head>
 <body>
 
-  <h1>Voice Controlled Todo App</h1>
-  <button id="listenBtn">Start Voice Command</button>
-  <p id="transcript"></p>
-  <ul id="todoList"></ul>
+<h1>Voice Math Practice</h1>
+
+<label>Category</label>
+<select id="category">
+  <option value="random">Random</option>
+  <option value="add">Addition</option>
+  <option value="sub">Subtraction</option>
+  <option value="mul">Multiplication</option>
+  <option value="div">Division</option>
+  <option value="rem">Remainder</option>
+  <option value="avg">Average</option>
+  <option value="pl">Profit & Loss</option>
+</select>
+
+<label>Number Range (min – max)</label>
+<input type="number" id="min" value="1" />
+<input type="number" id="max" value="10" />
+
+<label>Time (minutes)</label>
+<input type="number" id="time" value="1" />
+
+<button id="startBtn">Start</button>
+
+<div id="question"></div>
+<div id="feedback"></div>
+
+<input type="text" id="answerInput" placeholder="Type answer and press Enter" class="hidden" />
 
 <script>
-// ——— LOCAL STORAGE ——————————————
-function loadTodos(){
-  return JSON.parse(localStorage.getItem("todos") || "[]");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.continuous = true;
+recognition.lang = 'en-US';
+
+let correctAnswer = null;
+let endTime = null;
+let listening = false;
+
+const questionDiv = document.getElementById('question');
+const feedbackDiv = document.getElementById('feedback');
+const answerInput = document.getElementById('answerInput');
+
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  window.speechSynthesis.speak(msg);
 }
-function saveTodos(t){
-  localStorage.setItem("todos", JSON.stringify(t));
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function render(){
-  const list = document.getElementById("todoList");
-  list.innerHTML = "";
-  loadTodos().forEach((td,i)=>{
-    const li = document.createElement("li");
-    li.textContent = td.text;
-    list.appendChild(li);
-  });
+
+function generateQuestion() {
+  if (Date.now() > endTime) {
+    speak("Time over. Session ended.");
+    recognition.stop();
+    return;
+  }
+
+  const catSel = document.getElementById('category').value;
+  const min = Number(document.getElementById('min').value);
+  const max = Number(document.getElementById('max').value);
+
+  let cat = catSel === 'random'
+    ? ['add','sub','mul','div','rem','avg','pl'][rand(0,6)]
+    : catSel;
+
+  let a, b, qText;
+
+  switch (cat) {
+    case 'add':
+      a = rand(min,max); b = rand(min,max);
+      correctAnswer = a + b;
+      qText = `${a} plus ${b}`;
+      break;
+    case 'sub':
+      a = rand(min,max); b = rand(min,max);
+      correctAnswer = a - b;
+      qText = `${a} minus ${b}`;
+      break;
+    case 'mul':
+      a = rand(min,max); b = rand(min,max);
+      correctAnswer = a * b;
+      qText = `${a} multiplied by ${b}`;
+      break;
+    case 'div':
+      b = rand(min,max);
+      correctAnswer = rand(min,max);
+      a = b * correctAnswer;
+      qText = `${a} divided by ${b}`;
+      break;
+    case 'rem':
+      b = rand(min,max);
+      correctAnswer = rand(0,b-1);
+      a = rand(min,max) * b + correctAnswer;
+      qText = `remainder when ${a} is divided by ${b}`;
+      break;
+    case 'avg':
+      a = rand(min,max); b = rand(min,max);
+      correctAnswer = (a + b) / 2;
+      qText = `average of ${a} and ${b}`;
+      break;
+    case 'pl':
+      a = rand(min,max);
+      b = rand(min,max);
+      correctAnswer = b - a;
+      qText = `profit if cost price is ${a} and selling price is ${b}`;
+      break;
+  }
+
+  questionDiv.textContent = "Question: " + qText;
+  feedbackDiv.textContent = "";
+  speak(qText);
 }
-render();
 
-// ——— VOICE RECOGNITION —————————————
-const listenBtn = document.getElementById("listenBtn");
-const transcriptEl = document.getElementById("transcript");
+function checkAnswer(ans) {
+  if (Number(ans) === Number(correctAnswer)) {
+    feedbackDiv.textContent = "Correct";
+    speak("Correct");
+  } else {
+    feedbackDiv.textContent = "Wrong. Correct answer is " + correctAnswer;
+    speak("Wrong. Correct answer is " + correctAnswer);
+  }
+  setTimeout(generateQuestion, 800);
+}
 
-const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recog = new Recognition();
-recog.lang = "en-US";
-
-listenBtn.onclick = () => recog.start();
-
-recog.onresult = async (e) => {
-  const text = e.results[0][0].transcript;
-  transcriptEl.innerText = "You said: " + text;
-
-  const json = await getTodosFromAI(text);
-  if(json) handleJSON(json);
-  render();
+recognition.onresult = (e) => {
+  const transcript = e.results[e.results.length - 1][0].transcript.trim();
+  const num = transcript.match(/-?\d+(\.\d+)?/);
+  if (num) checkAnswer(num[0]);
 };
 
-// ——— GEMINI API CALL ——————————————
-async function getTodosFromAI(text){
-  const key = "AIzaSyDxw8ulwIyPZJTeoIY0WJySj3HH4ns5r_U";  // 🔑 Put your key
-  const prompt = `
-You will be given a voice command about todos.
-Respond only with valid JSON with keys:
-create: [], update: [{old, new}], delete: [].
-Do NOT add any explanation.
-
-Voice command:
-"${text}"
-`;
-
-  // free text model
-  const model = "gemini-2.0-flash";
-
-  const body = {
-    model,
-    input: prompt,
-  };
-
-  try {
-    const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta2/models:generateText?key=" + key,
-      {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(body)
-      }
-    );
-    const data = await r.json();
-    const out = data.output?.text || "";
-    return JSON.parse(out);
-  } catch(err){
-    console.error("AI Error", err);
-    return null;
+answerInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    checkAnswer(answerInput.value);
+    answerInput.value = '';
   }
-}
+});
 
-// ——— HANDLE JSON —————————————
-function handleJSON(j){
-  const todos = loadTodos();
-
-  if(j.create){
-    j.create.forEach(t => todos.push({ text: t }));
+document.getElementById('startBtn').onclick = () => {
+  endTime = Date.now() + Number(document.getElementById('time').value) * 60000;
+  answerInput.classList.remove('hidden');
+  generateQuestion();
+  if (!listening) {
+    recognition.start();
+    listening = true;
   }
-  if(j.update){
-    j.update.forEach(u => {
-      const idx = todos.findIndex(td => td.text.toLowerCase().includes(u.old.toLowerCase()));
-      if(idx >= 0) todos[idx].text = u.new;
-    });
-  }
-  if(j.delete){
-    j.delete.forEach(d => {
-      const idx = todos.findIndex(td => td.text.toLowerCase().includes(d.toLowerCase()));
-      if(idx >= 0) todos.splice(idx,1);
-    });
-  }
-
-  saveTodos(todos);
-}
-
+};
 </script>
+
 </body>
 </html>
