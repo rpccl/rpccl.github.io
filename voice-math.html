@@ -18,7 +18,7 @@ label {
 select, input, button {
   padding: 8px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   margin-top: 4px;
 }
 #question {
@@ -62,20 +62,19 @@ select, input, button {
 <div id="question"></div>
 <div id="feedback"></div>
 
-<label for="answerInput" class="hidden" id="answerLabel">Your Answer</label>
+<label for="answerInput" id="answerLabel" class="hidden">Your Answer</label>
 <input type="text" id="answerInput" class="hidden">
 
 <script>
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
 
-recognition.lang = 'en-US';
-recognition.continuous = true;
-recognition.interimResults = false;
+let recognition = null;
+let recognitionActive = false;
+let sessionRunning = false;
 
 let correctAnswer = null;
 let endTime = null;
-let isRunning = false;
 
 const questionDiv = document.getElementById('question');
 const feedbackDiv = document.getElementById('feedback');
@@ -94,8 +93,9 @@ function rand(min, max) {
 
 function generateQuestion() {
   if (Date.now() > endTime) {
+    sessionRunning = false;
     speak("Time over. Session ended.");
-    recognition.stop();
+    stopRecognition();
     return;
   }
 
@@ -104,7 +104,7 @@ function generateQuestion() {
   const max = Number(document.getElementById('max').value);
 
   let cat = catSel === 'random'
-    ? ['add','sub','mul','div','rem','avg','pl'][rand(0,6)]
+    ? ['add','sub','mul','div','rem','avg'][rand(0,5)]
     : catSel;
 
   let a, b, q;
@@ -150,10 +150,10 @@ function generateQuestion() {
 }
 
 function normalizeSpeech(text) {
-  text = text.toLowerCase();
-  text = text.replace(/minus\s+/g, '-');
-  text = text.replace(/negative\s+/g, '-');
-  return text;
+  return text
+    .toLowerCase()
+    .replace(/minus\s+/g, '-')
+    .replace(/negative\s+/g, '-');
 }
 
 function extractNumber(text) {
@@ -161,10 +161,25 @@ function extractNumber(text) {
   return m ? Number(m[0]) : null;
 }
 
-function checkAnswer(ans) {
-  if (ans === null) return;
+function checkAnswerFromSpeech(transcript) {
+  const normalized = normalizeSpeech(transcript);
+  const spokenNumber = extractNumber(normalized);
 
-  if (Number(ans) === Number(correctAnswer) || ans.includes(correctAnswer)) {
+  const correctStr = String(correctAnswer);
+
+  let isCorrect = false;
+
+  if (spokenNumber !== null && Number(spokenNumber) === Number(correctAnswer)) {
+    isCorrect = true;
+  } else if (normalized.includes(correctStr)) {
+    isCorrect = true;
+  }
+
+  handleResult(isCorrect);
+}
+
+function handleResult(isCorrect) {
+  if (isCorrect) {
     feedbackDiv.textContent = "Correct";
     speak("Correct");
   } else {
@@ -174,37 +189,64 @@ function checkAnswer(ans) {
   setTimeout(generateQuestion, 900);
 }
 
-recognition.onresult = (e) => {
-  const raw = e.results[e.results.length - 1][0].transcript;
-  const normalized = normalizeSpeech(raw);
-  const value = extractNumber(normalized);
-  checkAnswer(value);
-};
+function startRecognition() {
+  if (!SpeechRecognition || recognitionActive) return;
 
-recognition.onerror = () => {
-  if (isRunning) recognition.start();
-};
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = true;
+  recognition.interimResults = false;
 
-recognition.onend = () => {
-  if (isRunning) recognition.start();
-};
+  recognition.onresult = (e) => {
+    const transcript = e.results[e.results.length - 1][0].transcript;
+    checkAnswerFromSpeech(transcript);
+  };
+
+  recognition.onerror = () => {
+    if (!sessionRunning) return;
+    stopRecognition();
+    setTimeout(startRecognition, 500);
+  };
+
+  recognition.onend = () => {
+    if (sessionRunning) {
+      stopRecognition();
+      setTimeout(startRecognition, 300);
+    }
+  };
+
+  recognition.start();
+  recognitionActive = true;
+}
+
+function stopRecognition() {
+  if (recognition) {
+    recognition.onend = null;
+    recognition.onerror = null;
+    recognition.stop();
+    recognition = null;
+  }
+  recognitionActive = false;
+}
 
 answerInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const val = Number(answerInput.value);
     answerInput.value = '';
-    checkAnswer(val);
+    handleResult(Number(val) === Number(correctAnswer));
   }
 });
 
 document.getElementById('startBtn').onclick = () => {
   endTime = Date.now() + Number(time.value) * 60000;
-  isRunning = true;
-  answerInput.classList.remove('hidden');
+  sessionRunning = true;
+
   answerLabel.classList.remove('hidden');
+  answerInput.classList.remove('hidden');
   answerInput.focus();
+
   generateQuestion();
-  recognition.start();
+  startRecognition();
 };
 </script>
 
