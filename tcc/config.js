@@ -4,13 +4,26 @@ const API_URL =
     ? "http://localhost:3000/api"
     : "https://exam-api-sand.vercel.app/api";
 function showToast(message) {
+
+  // Set message
+  toast.textContent = message;
+
+  // Show toast
+  toast.style.display = "block";
+
+  // Hide after 1 second
+  setTimeout(() => {
+    toast.style.display = "none";
+    toast.textContent = "";
+  }, 1000);
+}
   let toast = document.getElementById("app-toast");
 
   // Create toast element if it doesn't exist
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "app-toast";
-    toast.setAttribute("role", "status");
+//    toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
     toast.setAttribute("aria-atomic", "true");
 
@@ -30,16 +43,3 @@ function showToast(message) {
 
     document.body.appendChild(toast);
   }
-
-  // Set message
-  toast.textContent = message;
-
-  // Show toast
-  toast.style.display = "block";
-
-  // Hide after 1 second
-  setTimeout(() => {
-    toast.style.display = "none";
-    toast.textContent = "";
-  }, 1000);
-}
