@@ -113,16 +113,18 @@
                 <input type="password" id="password" required placeholder="Enter admin password">
             </div>
             
-            <button type="submit" id="btn-login">Login Securely</button>
+            <button aria-live="polite" type="submit" id="btn-login">Login Securely</button>
         </form>
 
         <div id="error-display" class="error-msg" role="alert"></div>
     </div>
 
+<script src="config.js"></script>
+
     <script>
         // --- CONFIGURATION ---
         // REPLACE THIS with your actual Vercel Backend URL
-        const API_URL = "http://localhost:3000/api"; 
+//        const API_URL = "http://localhost:3000/api"; 
 
         // --- LOGIC ---
         const loginForm = document.getElementById('admin-login-form');

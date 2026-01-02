@@ -23,7 +23,7 @@
                     <input type="password" id="password" required aria-required="true" placeholder="Enter your Password">
                 </div>
                 
-                <button type="submit" id="btn-login">Start Exam Session</button>
+                <button aria-live="polite" type="submit" id="btn-login">Start Exam Session</button>
             </form>
 
             <div id="error-msg" class="error-box" aria-live="assertive"></div>
@@ -34,7 +34,7 @@
     <script>
         // --- CONFIG ---
         // REPLACE with your actual Vercel URL
-        const API_URL = "http://localhost:3000/api"; 
+//        const API_URL = "http://localhost:3000/api"; 
 
         // --- LOGIC ---
         const loginForm = document.getElementById('login-form');

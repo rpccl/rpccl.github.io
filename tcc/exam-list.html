@@ -17,10 +17,12 @@
         <div id="loading" aria-live="polite">Loading exams...</div>
         <div id="exam-list" class="exam-grid"></div>
     </main>
+<script src="config.js"></script>
+
 
     <script>
         // --- CONFIG ---
-        const API_URL = "http://localhost:3000/api"; 
+//        const API_URL = "http://localhost:3000/api"; 
         const TOKEN = localStorage.getItem('tcc_token');
         const STUDENT = JSON.parse(localStorage.getItem('tcc_student'));
 
@@ -56,7 +58,7 @@
                 container.innerHTML = '';
 
                 if (exams.length === 0) {
-                    container.innerHTML = "<p>No active exams found at this moment.</p>";
+                    container.innerHTML = "<p aria-live='polite' >No active exams found at this moment.</p>";
                     return;
                 }
 

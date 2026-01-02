@@ -20,28 +20,28 @@
 
     <div class="container">
         <h1>Exam Management</h1>
-        <div id="error-msg" style="color: red; display: none; margin-bottom: 10px;"></div>
+        <div aria-live="polite" id="error-msg" style="color: red; display: none; margin-bottom: 10px;"></div>
 
         <div class="admin-form">
-            <h3>Create New Exam</h3>
+            <h2>Create New Exam</h2>
             <form id="create-exam-form">
                 <div class="form-group">
-                    <label>Exam Title:</label>
-                    <input type="text" id="title" required placeholder="e.g. PHP Basics">
+                    <label for="title">Exam Title:</label>
+                    <input type="text" id="title" required >
                 </div>
                 <div class="form-group">
-                    <label>Start Date & Time:</label>
+                    <label for="startTime">Start Date & Time:</label>
                     <input type="datetime-local" id="startTime" required>
                 </div>
                 <div class="form-group">
-                    <label>Duration (Minutes):</label>
+                    <label for="duration">Duration (Minutes):</label>
                     <input type="number" id="duration" required>
                 </div>
                 <div class="form-group">
-                    <label>Total Marks:</label>
+                    <label for="totalMarks">Total Marks:</label>
                     <input type="number" id="totalMarks" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Create Exam</button>
+                <button aria-live="polite" type="submit" class="btn btn-primary">Create Exam</button>
             </form>
         </div>
 
@@ -59,9 +59,10 @@
         </table>
     </div>
 
+<script src="config.js"></script>
     <script>
         // --- CONFIG ---
-        const API_URL = "http://localhost:3000/api"; // UPDATE THIS AFTER DEPLOYING
+//        const API_URL = "http://localhost:3000/api"; // UPDATE THIS AFTER DEPLOYING
         const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
 
         // 1. Auth Check

@@ -22,7 +22,7 @@
         <h1>Question Management</h1>
 
         <div class="form-group" style="background: #e9ecef; padding: 15px; border-radius: 5px;">
-            <label style="font-size: 1.1em;">Select Exam to Add/Edit Questions:</label>
+            <label for ="exam-select" style="font-size: 1.1em;">Select Exam to Add/Edit Questions:</label>
             <select id="exam-select" onchange="loadQuestions()" style="font-size: 1.1em; padding: 10px;">
                 <option value="">-- Select an Exam --</option>
             </select>
@@ -32,20 +32,20 @@
             <h3 id="form-title">Add New Question</h3>
             <form id="question-form">
                 <input type="hidden" id="edit-id"> <div class="form-group">
-                    <label>Question Text:</label>
-                    <textarea id="qText" rows="3" required placeholder="Type the question here..."></textarea>
+                    <label for="qText">Question Text:</label>
+                    <textarea id="qText" rows="3" required ></textarea>
                 </div>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                    <div><label>Option A:</label><input type="text" id="optA" required></div>
-                    <div><label>Option B:</label><input type="text" id="optB" required></div>
-                    <div><label>Option C:</label><input type="text" id="optC" required></div>
-                    <div><label>Option D:</label><input type="text" id="optD" required></div>
+                    <div><label for="optA" >Option A:</label><input type="text" id="optA" required></div>
+                    <div><label for="optB">Option B:</label><input type="text" id="optB" required></div>
+                    <div><label for="optC" >Option C:</label><input type="text" id="optC" required></div>
+                    <div><label for="OptD">Option D:</label><input type="text" id="optD" required></div>
                 </div>
                 <br>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="form-group">
-                        <label>Correct Answer:</label>
+                        <label for="correct">Correct Answer:</label>
                         <select id="correct" required style="background: #d4edda; border-color: #28a745;">
                             <option value="A">Option A</option>
                             <option value="B">Option B</option>
@@ -54,13 +54,13 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Marks:</label>
+                        <label for="marks">Marks:</label>
                         <input type="number" id="marks" value="1" required min="1">
                     </div>
                 </div>
                 
                 <div style="margin-top: 20px;">
-                    <button type="submit" class="btn btn-success" id="btn-save" style="font-size: 1.1em;">Save Question</button>
+                    <button aria-live="polite" type="submit" class="btn btn-success" id="btn-save" style="font-size: 1.1em;">Save Question</button>
                     <button type="button" class="btn btn-warning" onclick="resetForm()">Clear / Cancel</button>
                 </div>
             </form>
@@ -81,10 +81,12 @@
             </table>
         </div>
     </div>
+<script src="config.js"></script>
+
 
     <script>
         // --- CONFIG ---
-        const API_URL = "http://localhost:3000/api"; // UPDATE THIS IF NEEDED
+//        const API_URL = "http://localhost:3000/api"; // UPDATE THIS IF NEEDED
         const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
 
         // --- AUTH CHECK ---
