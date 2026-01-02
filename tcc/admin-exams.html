@@ -101,6 +101,8 @@
                         </tr>
                     `;
                 });
+showToast("Exams loded!");
+
             } catch (e) {
                 console.error(e);
             }
@@ -109,6 +111,7 @@
         // 3. Create Exam (SECURE + TIMEZONE FIX)
         document.getElementById('create-exam-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+showToast("Creating exam.");
             
             // TIMEZONE LOGIC: Convert input to UTC
             const rawTime = document.getElementById('startTime').value;
@@ -134,13 +137,14 @@
                 });
 
                 if (res.ok) {
+showToast("Exam created!");
                     e.target.reset();
                     fetchExams();
                 } else {
-                    alert("Failed to create exam.");
+                    showToast("Failed to create exam.");
                 }
             } catch (err) {
-                alert("Network Error");
+                showToast("Network Error");
             }
         });
 
@@ -151,6 +155,7 @@
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
                 });
+showToast("Exam deleted.");
                 fetchExams();
             }
         }

@@ -40,7 +40,7 @@
                     <div><label for="optA" >Option A:</label><input type="text" id="optA" required></div>
                     <div><label for="optB">Option B:</label><input type="text" id="optB" required></div>
                     <div><label for="optC" >Option C:</label><input type="text" id="optC" required></div>
-                    <div><label for="OptD">Option D:</label><input type="text" id="optD" required></div>
+                    <div><label for="optD">Option D:</label><input type="text" id="optD" required></div>
                 </div>
                 <br>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
@@ -103,12 +103,14 @@
 
         // 1. Load Exams into Dropdown
         async function init() {
+showToast("Loading exams");
             try {
                 const res = await fetch(`${API_URL}/exams/list`, {
                     headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
                 });
 
                 if (res.status === 401 || res.status === 403) return logout();
+showToast("Exams loaded.");
 
                 const exams = await res.json();
                 const select = document.getElementById('exam-select');
@@ -122,12 +124,14 @@
 
         // 2. Load Questions for Selected Exam
         async function loadQuestions() {
+showToast("Loading question for selected exam");
             const examId = document.getElementById('exam-select').value;
             
             // Hide everything if no exam selected
             if(!examId) {
                 document.getElementById('question-editor').style.display = 'none';
                 document.getElementById('questions-container').style.display = 'none';
+showToast("No exam is selected");
                 return;
             }
 
@@ -141,13 +145,14 @@
                 });
 
                 if (res.status === 401 || res.status === 403) return logout();
+showToast("Questions loaded.");
 
                 const questions = await res.json();
                 const tbody = document.getElementById('questions-list');
                 tbody.innerHTML = '';
                 
                 if (questions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4">No questions added yet.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" aria-live="polite">No questions added yet.</td></tr>';
                 }
 
                 questions.forEach((q, index) => {
@@ -164,7 +169,7 @@
                     `;
                 });
             } catch (e) {
-                alert("Failed to load questions.");
+                showToast("Failed to load questions.");
             }
         }
 
@@ -196,6 +201,7 @@
         // 5. Create / Update Question
         document.getElementById('question-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+showToast("Saving question");
             const btn = document.getElementById('btn-save');
             btn.disabled = true;
 
@@ -235,13 +241,14 @@
                 });
 
                 if(res.ok) {
+showToast("Question saved!");
                     resetForm();
                     loadQuestions();
                 } else {
-                    alert("Error saving question.");
+                    showToast("Error saving question.");
                 }
             } catch (err) {
-                alert("Network error.");
+                showToast("Network error.");
             } finally {
                 btn.disabled = false;
             }
@@ -250,6 +257,7 @@
         // 6. Delete Question
         async function deleteQuestion(id) {
             if(!confirm('Delete this question permanently?')) return;
+showToast("Deleting question");
 
             try {
                 const res = await fetch(`${API_URL}/questions/delete/${id}`, { 
@@ -258,12 +266,13 @@
                 });
                 
                 if(res.ok) {
+showToast("Question deleted");
                     loadQuestions();
                 } else {
-                    alert("Failed to delete.");
+                    showToast("Failed to delete.");
                 }
             } catch (err) {
-                alert("Network error.");
+                showToast("Network error.");
             }
         }
 
