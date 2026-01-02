@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - Tanya Computer Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="login-container">
+        <div class="login-card">
+            <h1>Online Exam Portal</h1>
+            <p>Tanya Computer Center</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="rollNo">Roll Number:</label>
+                    <input type="text" id="rollNo" required aria-required="true" placeholder="Enter your Roll No">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required aria-required="true" placeholder="Enter your Password">
+                </div>
+                
+                <button type="submit" id="btn-login">Start Exam Session</button>
+            </form>
+
+            <div id="error-msg" class="error-box" aria-live="assertive"></div>
+        </div>
+    </main>
+
+<script src="config.js"></script>
+    <script>
+        // --- CONFIG ---
+        // REPLACE with your actual Vercel URL
+        const API_URL = "http://localhost:3000/api"; 
+
+        // --- LOGIC ---
+        const loginForm = document.getElementById('login-form');
+        const errorDiv = document.getElementById('error-msg');
+        const btn = document.getElementById('btn-login');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 1. Clear previous errors
+            errorDiv.style.display = 'none';
+            errorDiv.innerText = '';
+            btn.disabled = true;
+            btn.innerText = "Authenticating...";
+
+            const rollNo = document.getElementById('rollNo').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            try {
+                // 2. Send Login Request
+                const res = await fetch(`${API_URL}/student/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ rollNo, password })
+                });
+                
+                const data = await res.json();
+
+                if(res.ok) {
+                    // --- SUCCESS ---
+                    // 3. Save the Security Token & Student Info
+                    localStorage.setItem('tcc_token', data.token); // <--- CRITICAL
+                    localStorage.setItem('tcc_student', JSON.stringify(data.student));
+                    
+                    // 4. Redirect to Exam List
+                    window.location.href = 'exam-list.html';
+                } else {
+                    // --- FAIL ---
+                    showError(data.error || "Login Failed. Please check Roll No & Password.");
+                }
+            } catch (err) {
+                showError("Network Error. Please check your internet connection.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Start Exam Session";
+            }
+        });
+
+        function showError(msg) {
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+        }
+
+        // Auto-focus on Roll No for accessibility
+        document.getElementById('rollNo').focus();
+    </script>
+</body>
+</html>

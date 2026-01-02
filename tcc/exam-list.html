@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Exam - Tanya Computer Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="student-info-bar">
+        <div>Welcome, <span id="student-name">...</span></div>
+        <button onclick="logout()" style="background: #dc3545; font-size: 0.9em; padding: 5px 10px; color: white; border: none; border-radius: 4px; cursor: pointer;">Logout</button>
+    </header>
+
+    <main class="container">
+        <h1>Available Exams</h1>
+        <div id="loading" aria-live="polite">Loading exams...</div>
+        <div id="exam-list" class="exam-grid"></div>
+    </main>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = "http://localhost:3000/api"; 
+        const TOKEN = localStorage.getItem('tcc_token');
+        const STUDENT = JSON.parse(localStorage.getItem('tcc_student'));
+
+        // --- AUTH CHECK ---
+        if (!TOKEN || !STUDENT) {
+            window.location.href = 'index.html';
+        }
+
+        // Display Name
+        document.getElementById('student-name').innerText = STUDENT.name;
+
+        // --- FUNCTIONS ---
+
+        async function loadExams() {
+            try {
+                // We use the ADMIN endpoint generally for listing active exams, 
+                // but we need to ensure our API allows students to see this list.
+                // In our API code, we allowed GET /exams/list for authenticated users.
+                const res = await fetch(`${API_URL}/exams/list`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    logout();
+                    return;
+                }
+
+                const exams = await res.json();
+                const container = document.getElementById('exam-list');
+                const loading = document.getElementById('loading');
+                
+                loading.style.display = 'none';
+                container.innerHTML = '';
+
+                if (exams.length === 0) {
+                    container.innerHTML = "<p>No active exams found at this moment.</p>";
+                    return;
+                }
+
+                exams.forEach(exam => {
+                    // 1. Time Calculations
+                    const startTime = new Date(exam.startTime);
+                    const now = new Date();
+                    const endTime = new Date(startTime.getTime() + exam.durationMinutes * 60000);
+
+                    // 2. Format Time for Display
+                    const dateString = startTime.toLocaleDateString();
+                    const timeString = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    // 3. Determine Status
+                    let statusHtml = '';
+                    let btnDisabled = false;
+                    let btnText = "Start Exam";
+                    let cardClass = "exam-card";
+
+                    if (now < startTime) {
+                        // Future Exam
+                        statusHtml = `<span class="badge upcoming">Upcoming</span>`;
+                        btnDisabled = true;
+                        btnText = `Starts at ${timeString}`;
+                    } else if (now > endTime) {
+                        // Expired Exam
+                        statusHtml = `<span class="badge expired">Ended</span>`;
+                        btnDisabled = true;
+                        btnText = "Exam Ended";
+                        cardClass += " disabled-card";
+                    } else {
+                        // Active Exam
+                        statusHtml = `<span class="badge active">Live Now</span>`;
+                    }
+
+                    // 4. Render Card
+                    const div = document.createElement('div');
+                    div.className = cardClass;
+                    div.innerHTML = `
+                        <div class="exam-header">
+                            <h3>${exam.title}</h3>
+                            ${statusHtml}
+                        </div>
+                        <div class="exam-details">
+                            <p><strong>Date:</strong> ${dateString}</p>
+                            <p><strong>Time:</strong> ${timeString}</p>
+                            <p><strong>Duration:</strong> ${exam.durationMinutes} Minutes</p>
+                            <p><strong>Total Marks:</strong> ${exam.totalMarks}</p>
+                        </div>
+                        <button 
+                            onclick="startExam('${exam._id}')" 
+                            ${btnDisabled ? 'disabled' : ''}
+                            class="start-btn"
+                        >
+                            ${btnText}
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+
+            } catch (e) {
+                document.getElementById('loading').innerText = "Error loading exams. Please refresh.";
+            }
+        }
+
+        function startExam(examId) {
+            localStorage.setItem('tcc_current_exam_id', examId);
+            window.location.href = 'exam.html';
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Init
+        loadExams();
+    </script>
+</body>
+</html>

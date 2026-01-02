@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Results - Admin</title>
+    <link rel="stylesheet" href="admin-style.css">
+    <style>
+        /* Specific Result Styles */
+        .detail-view { 
+            margin-top: 20px; 
+            border: 1px solid #ccc; 
+            padding: 20px; 
+            background: #fff; 
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .q-block { 
+            border-bottom: 1px solid #eee; 
+            padding: 15px 0; 
+        }
+
+        .q-block:last-child { border-bottom: none; }
+
+        .correct-ans { 
+            background-color: #d4edda; 
+            color: #155724; 
+            border-left: 5px solid #28a745;
+            padding-left: 10px;
+        }
+
+        .wrong-ans { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+            border-left: 5px solid #dc3545;
+            padding-left: 10px;
+        }
+
+        .unanswered {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 5px solid #ffc107;
+            padding-left: 10px;
+        }
+
+        .badge-score {
+            background: #2c3e50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h2>Admin Panel</h2>
+        <div>
+            <a href="admin-students.html">Students</a>
+            <a href="admin-exams.html">Exams</a>
+            <a href="admin-questions.html">Questions</a>
+            <a href="admin-results.html" style="text-decoration: underline;">Results</a>
+            <button onclick="logout()" class="btn btn-warning" style="margin-left: 20px;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Exam Results & Analysis</h1>
+
+        <div class="form-group" style="background: #e9ecef; padding: 15px; border-radius: 5px;">
+            <label style="font-size: 1.1em;">Select Exam to View Results:</label>
+            <select id="exam-select" onchange="loadResults()" style="font-size: 1.1em; padding: 10px;">
+                <option value="">-- Select Exam --</option>
+            </select>
+        </div>
+
+        <div id="results-container" style="display:none;">
+            <h3>Student Performance List</h3>
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Date Taken</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="results-list"></tbody>
+            </table>
+        </div>
+
+        <div id="student-detail" class="detail-view" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="detail-header" style="margin:0;">Answer Sheet</h2>
+                <button class="btn btn-warning" onclick="document.getElementById('student-detail').style.display='none'">Close Details</button>
+            </div>
+            <hr>
+            <div id="detail-content">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = "http://localhost:3000/api"; 
+        const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
+
+        // --- AUTH CHECK ---
+        if (!ADMIN_TOKEN) {
+            window.location.href = 'admin-login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('tcc_admin_token');
+            window.location.href = 'admin-login.html';
+        }
+
+        // --- FUNCTIONS ---
+
+        // 1. Load Exams into Dropdown
+        async function init() {
+            try {
+                const res = await fetch(`${API_URL}/exams/list`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const exams = await res.json();
+                const select = document.getElementById('exam-select');
+                exams.forEach(ex => {
+                    select.innerHTML += `<option value="${ex._id}">${ex.title}</option>`;
+                });
+            } catch (e) {
+                console.error("Error loading exams", e);
+            }
+        }
+
+        // 2. Load Student Results for Selected Exam
+        async function loadResults() {
+            const examId = document.getElementById('exam-select').value;
+            const container = document.getElementById('results-container');
+            const tbody = document.getElementById('results-list');
+            
+            // Hide details if open
+            document.getElementById('student-detail').style.display = 'none';
+
+            if(!examId) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading results...</td></tr>';
+
+            try {
+                const res = await fetch(`${API_URL}/results/by-exam/${examId}`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const sessions = await res.json();
+                tbody.innerHTML = '';
+
+                if(sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No students have submitted this exam yet.</td></tr>';
+                    return;
+                }
+
+                sessions.forEach(session => {
+                    const date = new Date(session.startTimestamp).toLocaleDateString();
+                    // Handle missing student data gracefully (in case student was deleted)
+                    const roll = session.studentId ? session.studentId.rollNo : 'N/A';
+                    const name = session.studentId ? session.studentId.name : 'Unknown (Deleted)';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${roll}</td>
+                            <td>${name}</td>
+                            <td><span class="badge-score">${session.score}</span></td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick='viewDetail("${session._id}", "${name}")'>
+                                    View Answer Sheet
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                alert("Failed to fetch results.");
+            }
+        }
+
+        // 3. View Question-by-Question breakdown
+        async function viewDetail(sessionId, studentName) {
+            const div = document.getElementById('student-detail');
+            const content = document.getElementById('detail-content');
+            
+            document.getElementById('detail-header').innerText = `Answer Sheet: ${studentName}`;
+            div.style.display = 'block';
+            content.innerHTML = '<p style="text-align:center;">Loading answer data...</p>';
+            
+            // Scroll to view
+            div.scrollIntoView({behavior: "smooth"});
+
+            try {
+                const res = await fetch(`${API_URL}/results/session-detail/${sessionId}`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const data = await res.json(); 
+                // data = { session, questions }
+                
+                let html = '';
+                
+                data.questions.forEach((q, index) => {
+                    const studentAns = data.session.answers[q._id];
+                    let cssClass = '';
+                    let statusText = '';
+
+                    if (!studentAns) {
+                        cssClass = 'unanswered';
+                        statusText = 'Skipped';
+                    } else if (studentAns === q.correctAnswer) {
+                        cssClass = 'correct-ans';
+                        statusText = 'Correct';
+                    } else {
+                        cssClass = 'wrong-ans';
+                        statusText = 'Wrong';
+                    }
+                    
+                    html += `
+                        <div class="q-block ${cssClass}">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>Q${index+1}: ${q.questionText}</strong>
+                                <span style="font-weight:bold;">${statusText} (+${studentAns === q.correctAnswer ? q.marks : 0})</span>
+                            </div>
+                            <div style="margin-top:8px; color:#555;">
+                                A) ${q.options.A} <br>
+                                B) ${q.options.B} <br>
+                                C) ${q.options.C} <br>
+                                D) ${q.options.D}
+                            </div>
+                            <div style="margin-top:10px; font-weight:bold;">
+                                Student Answer: ${studentAns || 'None'} | 
+                                Correct Answer: ${q.correctAnswer}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                content.innerHTML = html;
+
+            } catch (err) {
+                content.innerHTML = '<p style="color:red;">Error loading detailed report.</p>';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

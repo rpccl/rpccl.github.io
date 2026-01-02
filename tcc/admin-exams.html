@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Exams - Admin</title>
+    <link rel="stylesheet" href="admin-style.css">
+</head>
+<body>
+    <nav>
+        <h2>Admin Panel</h2>
+        <div>
+            <a href="admin-students.html">Students</a>
+            <a href="admin-exams.html" style="text-decoration: underline;">Exams</a>
+            <a href="admin-questions.html">Questions</a>
+            <a href="admin-results.html">Results</a>
+            <button onclick="logout()" class="btn btn-warning" style="margin-left: 20px;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Exam Management</h1>
+        <div id="error-msg" style="color: red; display: none; margin-bottom: 10px;"></div>
+
+        <div class="admin-form">
+            <h3>Create New Exam</h3>
+            <form id="create-exam-form">
+                <div class="form-group">
+                    <label>Exam Title:</label>
+                    <input type="text" id="title" required placeholder="e.g. PHP Basics">
+                </div>
+                <div class="form-group">
+                    <label>Start Date & Time:</label>
+                    <input type="datetime-local" id="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Duration (Minutes):</label>
+                    <input type="number" id="duration" required>
+                </div>
+                <div class="form-group">
+                    <label>Total Marks:</label>
+                    <input type="number" id="totalMarks" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Exam</button>
+            </form>
+        </div>
+
+        <h3>Existing Exams</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Start Time (Your Local Time)</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="exam-list"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = "http://localhost:3000/api"; // UPDATE THIS AFTER DEPLOYING
+        const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
+
+        // 1. Auth Check
+        if (!ADMIN_TOKEN) window.location.href = 'admin-login.html';
+
+        function logout() {
+            localStorage.removeItem('tcc_admin_token');
+            window.location.href = 'admin-login.html';
+        }
+
+        // 2. Fetch Exams (SECURE)
+        async function fetchExams() {
+            try {
+                const res = await fetch(`${API_URL}/exams/list`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+                
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const exams = await res.json();
+                const tbody = document.getElementById('exam-list');
+                tbody.innerHTML = '';
+                
+                exams.forEach(exam => {
+                    // CONVERT UTC TO LOCAL TIME FOR DISPLAY
+                    const localTime = new Date(exam.startTime).toLocaleString();
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${exam.title}</td>
+                            <td>${localTime}</td>
+                            <td>${exam.durationMinutes} min</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="deleteExam('${exam._id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // 3. Create Exam (SECURE + TIMEZONE FIX)
+        document.getElementById('create-exam-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // TIMEZONE LOGIC: Convert input to UTC
+            const rawTime = document.getElementById('startTime').value;
+            const localDate = new Date(rawTime);
+            const utcTime = localDate.toISOString(); // Send this to DB
+
+            const data = {
+                title: document.getElementById('title').value,
+                startTime: utcTime,
+                durationMinutes: document.getElementById('duration').value,
+                totalMarks: document.getElementById('totalMarks').value,
+                active: true
+            };
+            
+            try {
+                const res = await fetch(`${API_URL}/exams/create`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ADMIN_TOKEN}` // Send Token
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    e.target.reset();
+                    fetchExams();
+                } else {
+                    alert("Failed to create exam.");
+                }
+            } catch (err) {
+                alert("Network Error");
+            }
+        });
+
+        // 4. Delete Exam
+        async function deleteExam(id) {
+            if(confirm('Delete this exam? Questions will be deleted too.')) {
+                await fetch(`${API_URL}/exams/delete/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+                fetchExams();
+            }
+        }
+
+        fetchExams();
+    </script>
+</body>
+</html>

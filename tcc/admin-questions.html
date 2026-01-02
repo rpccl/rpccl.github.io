@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Questions - Admin</title>
+    <link rel="stylesheet" href="admin-style.css">
+</head>
+<body>
+    <nav>
+        <h2>Admin Panel</h2>
+        <div>
+            <a href="admin-students.html">Students</a>
+            <a href="admin-exams.html">Exams</a>
+            <a href="admin-questions.html" style="text-decoration: underline;">Questions</a>
+            <a href="admin-results.html">Results</a>
+            <button onclick="logout()" class="btn btn-warning" style="margin-left: 20px;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Question Management</h1>
+
+        <div class="form-group" style="background: #e9ecef; padding: 15px; border-radius: 5px;">
+            <label style="font-size: 1.1em;">Select Exam to Add/Edit Questions:</label>
+            <select id="exam-select" onchange="loadQuestions()" style="font-size: 1.1em; padding: 10px;">
+                <option value="">-- Select an Exam --</option>
+            </select>
+        </div>
+
+        <div id="question-editor" class="admin-form" style="display:none;">
+            <h3 id="form-title">Add New Question</h3>
+            <form id="question-form">
+                <input type="hidden" id="edit-id"> <div class="form-group">
+                    <label>Question Text:</label>
+                    <textarea id="qText" rows="3" required placeholder="Type the question here..."></textarea>
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div><label>Option A:</label><input type="text" id="optA" required></div>
+                    <div><label>Option B:</label><input type="text" id="optB" required></div>
+                    <div><label>Option C:</label><input type="text" id="optC" required></div>
+                    <div><label>Option D:</label><input type="text" id="optD" required></div>
+                </div>
+                <br>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div class="form-group">
+                        <label>Correct Answer:</label>
+                        <select id="correct" required style="background: #d4edda; border-color: #28a745;">
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Marks:</label>
+                        <input type="number" id="marks" value="1" required min="1">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" id="btn-save" style="font-size: 1.1em;">Save Question</button>
+                    <button type="button" class="btn btn-warning" onclick="resetForm()">Clear / Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="questions-container" style="display:none;">
+            <h3>Questions in this Exam</h3>
+            <table id="questions-table">
+                <thead>
+                    <tr>
+                        <th width="50%">Question</th>
+                        <th>Correct</th>
+                        <th>Marks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="questions-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = "http://localhost:3000/api"; // UPDATE THIS IF NEEDED
+        const ADMIN_TOKEN = localStorage.getItem('tcc_admin_token');
+
+        // --- AUTH CHECK ---
+        if (!ADMIN_TOKEN) {
+            window.location.href = 'admin-login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('tcc_admin_token');
+            window.location.href = 'admin-login.html';
+        }
+
+        // --- FUNCTIONS ---
+
+        // 1. Load Exams into Dropdown
+        async function init() {
+            try {
+                const res = await fetch(`${API_URL}/exams/list`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const exams = await res.json();
+                const select = document.getElementById('exam-select');
+                exams.forEach(ex => {
+                    select.innerHTML += `<option value="${ex._id}">${ex.title}</option>`;
+                });
+            } catch (e) {
+                console.error("Error loading exams", e);
+            }
+        }
+
+        // 2. Load Questions for Selected Exam
+        async function loadQuestions() {
+            const examId = document.getElementById('exam-select').value;
+            
+            // Hide everything if no exam selected
+            if(!examId) {
+                document.getElementById('question-editor').style.display = 'none';
+                document.getElementById('questions-container').style.display = 'none';
+                return;
+            }
+
+            // Show Editor
+            document.getElementById('question-editor').style.display = 'block';
+            document.getElementById('questions-container').style.display = 'block';
+
+            try {
+                const res = await fetch(`${API_URL}/questions/by-exam/${examId}`, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (res.status === 401 || res.status === 403) return logout();
+
+                const questions = await res.json();
+                const tbody = document.getElementById('questions-list');
+                tbody.innerHTML = '';
+                
+                if (questions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No questions added yet.</td></tr>';
+                }
+
+                questions.forEach((q, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>Q${index + 1}.</strong> ${q.questionText}</td>
+                            <td><span style="font-weight:bold; color:green;">${q.correctAnswer}</span></td>
+                            <td>${q.marks}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick='editQuestion(${JSON.stringify(q)})'>Edit</button>
+                                <button class="btn btn-danger" onclick="deleteQuestion('${q._id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                alert("Failed to load questions.");
+            }
+        }
+
+        // 3. Edit Helper
+        function editQuestion(q) {
+            document.getElementById('edit-id').value = q._id;
+            document.getElementById('qText').value = q.questionText;
+            document.getElementById('optA').value = q.options.A;
+            document.getElementById('optB').value = q.options.B;
+            document.getElementById('optC').value = q.options.C;
+            document.getElementById('optD').value = q.options.D;
+            document.getElementById('correct').value = q.correctAnswer;
+            document.getElementById('marks').value = q.marks;
+            
+            // UI Feedback
+            document.getElementById('form-title').innerText = "Edit Question";
+            document.getElementById('btn-save').innerText = "Update Question";
+            document.getElementById('question-editor').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 4. Reset Form
+        function resetForm() {
+            document.getElementById('question-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('form-title').innerText = "Add New Question";
+            document.getElementById('btn-save').innerText = "Save Question";
+        }
+
+        // 5. Create / Update Question
+        document.getElementById('question-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+
+            const examId = document.getElementById('exam-select').value;
+            const qId = document.getElementById('edit-id').value;
+            
+            const payload = {
+                examId: examId,
+                questionText: document.getElementById('qText').value,
+                options: {
+                    A: document.getElementById('optA').value,
+                    B: document.getElementById('optB').value,
+                    C: document.getElementById('optC').value,
+                    D: document.getElementById('optD').value
+                },
+                correctAnswer: document.getElementById('correct').value,
+                marks: document.getElementById('marks').value
+            };
+
+            let url = `${API_URL}/questions/create`;
+            let method = 'POST';
+
+            // Switch to Update if ID exists
+            if(qId) {
+                url = `${API_URL}/questions/update/${qId}`;
+                method = 'PUT';
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ADMIN_TOKEN}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if(res.ok) {
+                    resetForm();
+                    loadQuestions();
+                } else {
+                    alert("Error saving question.");
+                }
+            } catch (err) {
+                alert("Network error.");
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // 6. Delete Question
+        async function deleteQuestion(id) {
+            if(!confirm('Delete this question permanently?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/questions/delete/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+                
+                if(res.ok) {
+                    loadQuestions();
+                } else {
+                    alert("Failed to delete.");
+                }
+            } catch (err) {
+                alert("Network error.");
+            }
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
