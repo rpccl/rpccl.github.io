@@ -189,7 +189,7 @@
                 if(q.options[opt]) {
                     const isChecked = state.answers[q._id] === opt ? 'checked' : '';
                     container.innerHTML += `
-                        <label for = opt class="option-label">
+                        <label for = "${opt}" class="option-label">
                             <input id=opt type="radio" name="q_${q._id}" value="${opt}" ${isChecked} onchange="saveAnswer('${q._id}', '${opt}')">
                             <span style="font-weight:bold; margin-right:10px;">${opt}.</span> ${q.options[opt]}
                         </label>
