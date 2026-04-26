@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Number Sound Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+button, input {
+  font-size: 18px;
+  padding: 10px;
+  margin: 5px;
+}
+
+#status {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.visually-hidden {
+  position: absolute;
+  left: -9999px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Number Sound Game</h1>
+
+<p>
+Listen carefully. Two sounds represent a number:
+Sound A = ones digit, Sound B = tens digit.
+</p>
+
+<button id="startBtn">Start New Question</button>
+<button id="repeatBtn">Repeat (Space)</button>
+
+<div>
+  <label for="answerInput">Enter your answer:</label>
+  <input id="answerInput" type="text" inputmode="numeric" pattern="[0-9]*">
+  <button id="submitBtn">Submit</button>
+</div>
+
+<div id="status" aria-live="assertive"></div>
+<div id="srLive" class="visually-hidden" aria-live="polite"></div>
+
+<script>
+
+// ===== CONFIG =====
+const config = {
+  min: 10,
+  max: 99,
+  gapAfterSound: 50
+};
+
+// ===== SOUNDS (replace paths) =====
+const sounds = {
+  A: new Audio("soundA.mp3"),
+  B: new Audio("soundB.mp3"),
+  correct: new Audio("correct.mp3"),
+  wrong: new Audio("wrong.mp3")
+};
+
+// ===== STATE =====
+let currentNumber = null;
+let playing = false;
+
+// ===== HELPERS =====
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function playSound(audio) {
+  return new Promise(resolve => {
+    audio.currentTime = 0;
+    audio.play();
+    audio.addEventListener("ended", resolve, { once: true });
+  });
+}
+
+function stopAllSounds() {
+  Object.values(sounds).forEach(audio => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
+
+// ===== GAME =====
+function generateNumber() {
+  return Math.floor(Math.random() * (config.max - config.min + 1)) + config.min;
+}
+
+async function playSequence(number) {
+  if (playing) return;
+  playing = true;
+
+  const ones = number % 10;
+  const tens = Math.floor(number / 10);
+
+  announce("Playing question");
+
+  // Sound A (ones)
+  for (let i = 0; i < ones; i++) {
+    if (!playing) return;
+    await playSound(sounds.A);
+    await sleep(config.gapAfterSound);
+  }
+
+  await sleep(600);
+
+  // Sound B (tens)
+  for (let i = 0; i < tens; i++) {
+    if (!playing) return;
+    await playSound(sounds.B);
+    await sleep(config.gapAfterSound);
+  }
+
+  playing = false;
+}
+
+function startNewQuestion() {
+  stopAllSounds();
+  playing = false;
+
+  currentNumber = generateNumber();
+  document.getElementById("answerInput").value = "";
+
+  announce("New question started");
+  playSequence(currentNumber);
+
+  document.getElementById("answerInput").focus();
+}
+
+function repeatQuestion() {
+  if (currentNumber !== null) {
+    stopAllSounds();
+    playing = false;
+    playSequence(currentNumber);
+  }
+}
+
+async function checkAnswer(answer) {
+  if (currentNumber === null) return;
+
+  // STOP sequence immediately on submit
+  stopAllSounds();
+  playing = false;
+
+  if (!answer || isNaN(answer)) {
+    updateStatus("Please enter a valid number.");
+    announce("Invalid input");
+    return;
+  }
+
+  if (parseInt(answer) === currentNumber) {
+    sounds.correct.play();
+    updateStatus("Correct! The number was " + currentNumber);
+    announce("Correct answer");
+await sleep(1000);
+    startNewQuestion();
+  } else {
+    sounds.wrong.play();
+    updateStatus("Wrong! Try again.");
+    announce("Wrong answer");
+  }
+
+  // clear input after submit
+  document.getElementById("answerInput").value = "";
+}
+
+// ===== ACCESSIBILITY =====
+function updateStatus(msg) {
+  document.getElementById("status").textContent = msg;
+}
+
+function announce(msg) {
+  const el = document.getElementById("srLive");
+  el.textContent = "";
+  setTimeout(() => {
+    el.textContent = msg;
+  }, 50);
+}
+
+// ===== EVENTS =====
+document.getElementById("startBtn").addEventListener("click", startNewQuestion);
+document.getElementById("repeatBtn").addEventListener("click", repeatQuestion);
+document.getElementById("submitBtn").addEventListener("click", () => {
+  checkAnswer(document.getElementById("answerInput").value);
+});
+
+// ===== GLOBAL KEY HANDLING =====
+document.addEventListener("keydown", function(e) {
+
+  const input = document.getElementById("answerInput");
+  const isTypingInInput = document.activeElement === input;
+
+  // SPACE = repeat
+  if (e.code === "Space") {
+    e.preventDefault();
+    repeatQuestion();
+    return;
+  }
+
+  // ENTER (including numpad)
+  if (e.key === "Enter") {
+    checkAnswer(input.value);
+    return;
+  }
+
+  // Handle digits (top row + numpad)
+  const isDigit =
+    (e.key >= "0" && e.key <= "9") ||
+    (e.code && e.code.startsWith("Numpad") && !isNaN(e.key));
+
+  if (!isTypingInInput && isDigit) {
+    input.value += e.key;
+  }
+
+  // Handle backspace globally
+  if (!isTypingInInput && e.key === "Backspace") {
+    input.value = input.value.slice(0, -1);
+  }
+
+});
+
+</script>
+
+</body>
+</html>
