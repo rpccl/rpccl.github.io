@@ -19,23 +19,24 @@
         width: 100%;
         box-sizing: border-box;
         min-height: 180px;
-        font-size: 18px;
         padding: 10px;
+        font-size: 18px;
     }
 
     button {
         font-size: 18px;
         padding: 10px 20px;
         margin: 15px 0;
+        cursor: pointer;
+    }
+
+    #status {
+        margin: 10px 0;
     }
 
     #output {
         font-size: 28px;
         line-height: 1.6;
-    }
-
-    #status {
-        margin: 10px 0;
     }
 </style>
 ```
@@ -60,7 +61,11 @@
 
 <textarea id="output" readonly></textarea>
 
+<!-- Liblouis C-API build -->
+
 <script src="https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/build-no-tables-utf16.js"></script>
+
+<!-- Liblouis Easy API -->
 
 <script src="https://cdn.jsdelivr.net/npm/liblouis@0.4.0/easy-api.js"></script>
 
@@ -71,20 +76,14 @@
     const easyApiUrl =
         "https://cdn.jsdelivr.net/npm/liblouis@0.4.0/easy-api.js";
 
-    /*
-     * Create the asynchronous Liblouis API.
-     *
-     * EasyApiAsync runs Liblouis in a Web Worker.
-     */
-    const liblouis = new window.liblouis.EasyApiAsync({
+    // IMPORTANT: use "liblouis", not "window.liblouis".
+    const translator = new liblouis.EasyApiAsync({
         capi: capiUrl,
         easyapi: easyApiUrl
     });
 
-    /*
-     * Tell Liblouis where it can download tables.
-     */
-    liblouis.enableOnDemandTableLoading(
+    // Download translation tables from jsDelivr when needed.
+    translator.enableOnDemandTableLoading(
         "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/tables/"
     );
 
@@ -93,27 +92,27 @@
     const button = document.getElementById("translateButton");
     const status = document.getElementById("status");
 
-    liblouis.version(function(version) {
+    translator.version(function(version) {
         status.textContent = "Liblouis " + version + " is ready.";
     });
 
     button.addEventListener("click", function() {
         const text = input.value;
 
-        if (!text) {
+        if (!text.trim()) {
             output.value = "";
             return;
         }
 
         status.textContent = "Translating...";
 
-        liblouis.translateString(
+        translator.translateString(
             "tables/unicode.dis,tables/en-ueb-g2.ctb",
             text,
             function(result) {
                 if (result === null) {
                     output.value = "";
-                    status.textContent = "Translation failed.";
+                    status.textContent = "Translation failed. Check the browser console.";
                     return;
                 }
 
