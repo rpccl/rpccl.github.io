@@ -61,9 +61,9 @@
 
 <textarea id="output" readonly></textarea>
 
-<!-- Liblouis C-API build -->
+<!-- Liblouis C-API -->
 
-<script src="https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/build-no-tables-utf16.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0-rc/build-no-tables-utf16.js"></script>
 
 <!-- Liblouis Easy API -->
 
@@ -71,20 +71,28 @@
 
 <script>
     const capiUrl =
-        "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/build-no-tables-utf16.js";
+        "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0-rc/build-no-tables-utf16.js";
 
     const easyApiUrl =
         "https://cdn.jsdelivr.net/npm/liblouis@0.4.0/easy-api.js";
 
-    // IMPORTANT: use "liblouis", not "window.liblouis".
-    const translator = new liblouis.EasyApiAsync({
+    /*
+     * The actual constructor exported by easy-api.js in a browser is:
+     *
+     *     LiblouisEasyApiAsync
+     *
+     * It is a global browser variable.
+     */
+    const translator = new LiblouisEasyApiAsync({
         capi: capiUrl,
         easyapi: easyApiUrl
     });
 
-    // Download translation tables from jsDelivr when needed.
+    /*
+     * Tell the worker where the Liblouis tables are.
+     */
     translator.enableOnDemandTableLoading(
-        "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/tables/"
+        "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0-rc/tables/"
     );
 
     const input = document.getElementById("input");
@@ -112,7 +120,7 @@
             function(result) {
                 if (result === null) {
                     output.value = "";
-                    status.textContent = "Translation failed. Check the browser console.";
+                    status.textContent = "Translation failed.";
                     return;
                 }
 
