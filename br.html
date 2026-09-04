@@ -9,10 +9,10 @@
 ```
 <style>
     body {
-        font-family: sans-serif;
+        font-family: Arial, sans-serif;
         max-width: 900px;
         margin: 30px auto;
-        padding: 0 20px;
+        padding: 20px;
     }
 
     textarea {
@@ -27,16 +27,15 @@
         font-size: 18px;
         padding: 10px 20px;
         margin: 15px 0;
-        cursor: pointer;
-    }
-
-    #status {
-        margin-bottom: 10px;
     }
 
     #output {
         font-size: 28px;
         line-height: 1.6;
+    }
+
+    #status {
+        margin: 10px 0;
     }
 </style>
 ```
@@ -45,12 +44,11 @@
 
 <body>
 
-```
 <h1>Liblouis Braille Translator</h1>
 
-<p>Paste some English text below:</p>
+<p>Paste English text:</p>
 
-<textarea id="input" placeholder="Type or paste text here..."></textarea>
+<textarea id="input" placeholder="Paste text here..."></textarea>
 
 <br>
 
@@ -62,8 +60,8 @@
 
 <textarea id="output" readonly></textarea>
 
+<script src="https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/build-no-tables-utf16.js"></script>
 
-<!-- Liblouis Easy API -->
 <script src="https://cdn.jsdelivr.net/npm/liblouis@0.4.0/easy-api.js"></script>
 
 <script>
@@ -74,17 +72,17 @@
         "https://cdn.jsdelivr.net/npm/liblouis@0.4.0/easy-api.js";
 
     /*
-     * Liblouis' asynchronous API runs Liblouis in a Web Worker.
-     * This is necessary when using on-demand tables in the browser.
+     * Create the asynchronous Liblouis API.
+     *
+     * EasyApiAsync runs Liblouis in a Web Worker.
      */
-    const liblouis = new window.LiblouisAsyncEasyApi({
+    const liblouis = new window.liblouis.EasyApiAsync({
         capi: capiUrl,
         easyapi: easyApiUrl
     });
 
     /*
-     * Tables are fetched from the liblouis-build package on jsDelivr
-     * when they are needed.
+     * Tell Liblouis where it can download tables.
      */
     liblouis.enableOnDemandTableLoading(
         "https://cdn.jsdelivr.net/npm/liblouis-build@3.2.0/tables/"
@@ -95,9 +93,11 @@
     const button = document.getElementById("translateButton");
     const status = document.getElementById("status");
 
-    status.textContent = "Liblouis is ready.";
+    liblouis.version(function(version) {
+        status.textContent = "Liblouis " + version + " is ready.";
+    });
 
-    button.addEventListener("click", function () {
+    button.addEventListener("click", function() {
         const text = input.value;
 
         if (!text) {
@@ -107,23 +107,22 @@
 
         status.textContent = "Translating...";
 
-        /*
-         * unicode.dis tells Liblouis that the output should be
-         * Unicode Braille.
-         *
-         * en-ueb-g2.ctb is Unified English Braille, Grade 2.
-         */
         liblouis.translateString(
             "tables/unicode.dis,tables/en-ueb-g2.ctb",
             text,
-            function (braille) {
-                output.value = braille;
+            function(result) {
+                if (result === null) {
+                    output.value = "";
+                    status.textContent = "Translation failed.";
+                    return;
+                }
+
+                output.value = result;
                 status.textContent = "Translation complete.";
             }
         );
     });
 </script>
-```
 
 </body>
 </html>
